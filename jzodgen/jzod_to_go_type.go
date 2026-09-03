@@ -9,6 +9,10 @@ import (
 	"github.com/miroir-framework/miroir/go/jzod"
 )
 
+// transformerAnyRelativePath is the bootstrap placeholder for transformer
+// schemas that are not generated yet. Jzod maps it to Go any.
+const transformerAnyRelativePath = "coreTransformerForBuildPlusRuntime_any"
+
 type namedDecl struct {
 	name string
 	expr string
@@ -263,6 +267,9 @@ func (g *generator) schemaRefExpr(el map[string]any, inField bool) (string, erro
 	def := refDefinition(el)
 	rel, _ := def["relativePath"].(string)
 	abs, _ := def["absolutePath"].(string)
+	if rel == transformerAnyRelativePath {
+		return "any", nil
+	}
 	eager, _ := def["eager"].(bool)
 	partial, _ := def["partial"].(bool)
 	if eager {
