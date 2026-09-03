@@ -462,6 +462,273 @@
           null
         ],
         "expectedValue": "type Person struct {\n\tName *string `json:\"name,omitempty\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "literal string",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Kind",
+          {
+            "type": "literal",
+            "definition": "book"
+          },
+          null
+        ],
+        "expectedValue": "type Kind string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "literal number",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Count",
+          {
+            "type": "literal",
+            "definition": 1
+          },
+          null
+        ],
+        "expectedValue": "type Count float64"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "literal boolean",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "FlagLit",
+          {
+            "type": "literal",
+            "definition": true
+          },
+          null
+        ],
+        "expectedValue": "type FlagLit bool"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "enum strings",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Color",
+          {
+            "type": "enum",
+            "definition": [
+              "red",
+              "blue"
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type Color string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "union of strings",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Name",
+          {
+            "type": "union",
+            "definition": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type Name string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "union string or number",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Value",
+          {
+            "type": "union",
+            "definition": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type Value any"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "union of string literals",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Kind",
+          {
+            "type": "union",
+            "definition": [
+              {
+                "type": "literal",
+                "definition": "book"
+              },
+              {
+                "type": "literal",
+                "definition": "magazine"
+              }
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type Kind string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object extend merge",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ext",
+          {
+            "type": "object",
+            "extend": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            },
+            "definition": {
+              "b": {
+                "type": "boolean"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Ext struct {\n\tA string `json:\"a\"`\n\tB bool   `json:\"b\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object extend overwrite",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ext",
+          {
+            "type": "object",
+            "extend": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            },
+            "definition": {
+              "a": {
+                "type": "number"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Ext struct {\n\tA float64 `json:\"a\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object extend array",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ext",
+          {
+            "type": "object",
+            "extend": [
+              {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "definition": {
+                  "b": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            ],
+            "definition": {
+              "c": {
+                "type": "number"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Ext struct {\n\tA string  `json:\"a\"`\n\tB bool    `json:\"b\"`\n\tC float64 `json:\"c\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object extend only",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ext",
+          {
+            "type": "object",
+            "extend": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            },
+            "definition": {}
+          },
+          null
+        ],
+        "expectedValue": "type Ext struct {\n\tA string `json:\"a\"`\n}"
       }
     ]
   }

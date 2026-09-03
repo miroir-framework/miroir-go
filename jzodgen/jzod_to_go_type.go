@@ -41,6 +41,29 @@ func goTypeExpr(schema any, env map[string]any) (string, error) {
 		return "any", nil
 	case "never":
 		return "struct{}", nil
+	case "literal":
+		return goTypeOfValue(el["definition"]), nil
+	case "enum":
+		return "string", nil
+	case "union":
+		list, ok := el["definition"].([]any)
+		if !ok || len(list) == 0 {
+			return "any", nil
+		}
+		first, err := goTypeExpr(list[0], env)
+		if err != nil {
+			return "", err
+		}
+		for _, item := range list[1:] {
+			next, err := goTypeExpr(item, env)
+			if err != nil {
+				return "", err
+			}
+			if next != first {
+				return "any", nil
+			}
+		}
+		return first, nil
 	case "array":
 		inner, err := goTypeExpr(el["definition"], env)
 		if err != nil {
@@ -68,7 +91,10 @@ func goTypeExpr(schema any, env map[string]any) (string, error) {
 		}
 		return structExpr(fields), nil
 	case "object":
-		def, _ := el["definition"].(map[string]any)
+		def, err := objectDefinition(el, env)
+		if err != nil {
+			return "", err
+		}
 		if len(def) == 0 {
 			return "struct{}", nil
 		}
@@ -148,4 +174,81 @@ func exportedIdent(key string) string {
 		return "F" + s
 	}
 	return s
+}
+
+func goTypeOfValue(v any) string {
+	switch v.(type) {
+	case string:
+		return "string"
+	case bool:
+		return "bool"
+	case float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return "float64"
+	default:
+		return "any"
+	}
+}
+
+func objectDefinition(el map[string]any, env map[string]any) (map[string]any, error) {
+	own, _ := el["definition"].(map[string]any)
+	if own == nil {
+		own = map[string]any{}
+	}
+	if el["extend"] == nil {
+		return own, nil
+	}
+	parent, err := extendDefinition(el["extend"], env)
+	if err != nil {
+		return nil, err
+	}
+	return mergeObjectDefs(parent, own), nil
+}
+
+func extendDefinition(extend any, env map[string]any) (map[string]any, error) {
+	switch e := extend.(type) {
+	case []any:
+		out := map[string]any{}
+		for _, item := range e {
+			part, err := extendDefinition(item, env)
+			if err != nil {
+				return nil, err
+			}
+			out = mergeObjectDefs(out, part)
+		}
+		return out, nil
+	case map[string]any:
+		switch e["type"] {
+		case "object":
+			return objectDefinition(e, env)
+		default:
+			return nil, fmt.Errorf("JzodToGoType extend clause type %v", e["type"])
+		}
+	default:
+		return nil, fmt.Errorf("JzodToGoType unsupported extend clause")
+	}
+}
+
+func mergeObjectDefs(parent, child map[string]any) map[string]any {
+	if parent == nil {
+		parent = map[string]any{}
+	}
+	if child == nil {
+		child = map[string]any{}
+	}
+	out := map[string]any{}
+	var keys []string
+	seen := map[string]bool{}
+	for _, k := range jzod.KeysOf(parent) {
+		out[k] = parent[k]
+		keys = append(keys, k)
+		seen[k] = true
+	}
+	for _, k := range jzod.KeysOf(child) {
+		out[k] = child[k]
+		if !seen[k] {
+			keys = append(keys, k)
+		}
+	}
+	jzod.RememberKeys(out, keys)
+	return out
 }
