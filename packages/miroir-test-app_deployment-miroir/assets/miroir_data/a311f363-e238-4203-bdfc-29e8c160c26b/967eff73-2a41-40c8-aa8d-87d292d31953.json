@@ -1,0 +1,544 @@
+{
+  "uuid": "967eff73-2a41-40c8-aa8d-87d292d31953",
+  "parentName": "MiroirTest",
+  "parentUuid": "a311f363-e238-4203-bdfc-29e8c160c26b",
+  "selfApplication": "360fcf1f-f0d4-4f8a-9262-07886e70fa15",
+  "branch": "ad1ddc4e-556e-4598-9cff-706a2bde0be7",
+  "name": "runner_freeze_application_version",
+  "description": "freezeApplicationVersion runner integration tests (#225 Phase 2). Owned by Miroir meta-application; appForTest (Publisher+Country) is the runTarget/testbed. Leaves: V1 baseline freeze; V1→alter→V2 via runner.",
+  "definition": {
+    "miroirTestType": "miroirTestSuite",
+    "miroirTestLabel": "runner.freezeApplicationVersion",
+    "runTarget": {
+      "applicationUuid": "eef01001-0001-4000-8000-000000000001",
+      "applicationName": "appForTest",
+      "deploymentUuid": "eef01001-0002-4000-8000-000000000002"
+    },
+    "miroirTests": [
+      {
+        "miroirTestType": "runnerTest",
+        "miroirTestLabel": "Freeze V1 Baseline",
+        "runnerRef": "20d51c4c-52e5-4077-baf3-5e87bd75e496",
+        "testCompositeActionLabel": "Freeze V1 Baseline",
+        "initialModel": {
+          "transformerType": "getFromParameters",
+          "interpolation": "build",
+          "referenceName": "defaultAppForTestModel"
+        },
+        "testParams": {
+          "freezeApplicationVersion": {
+            "application": {
+              "transformerType": "getFromParameters",
+              "interpolation": "build",
+              "referenceName": "testApplicationUuid"
+            },
+            "versionName": "V1-Baseline",
+            "branch": "eef01001-0004-4000-8000-000000000004"
+          }
+        },
+        "preTestCompositeActions": [
+          {
+            "actionType": "compositeRunBoxedQueryAction",
+            "endpoint": "1e2ef8e6-7fdf-4e3f-b291-2e6e599fb2b5",
+            "actionLabel": "query_freezeState",
+            "nameGivenToResult": "freezeState",
+            "payload": {
+              "actionType": "runBoxedQueryAction",
+              "endpoint": "9e404b3c-368c-40cb-be8b-e3c28550c25e",
+              "payload": {
+                "application": {
+                  "transformerType": "getFromParameters",
+                  "interpolation": "build",
+                  "referenceName": "testApplicationUuid"
+                },
+                "applicationSection": "modelVersion",
+                "queryExecutionStrategy": "storage",
+                "query": {
+                  "queryType": "boxedQueryWithExtractorCombinerTransformer",
+                  "application": {
+                    "transformerType": "getFromParameters",
+                    "interpolation": "build",
+                    "referenceName": "testApplicationUuid"
+                  },
+                  "pageParams": {
+                    "currentDeploymentUuid": {
+                      "transformerType": "getFromParameters",
+                      "interpolation": "build",
+                      "referenceName": "testApplicationDeploymentUuid"
+                    }
+                  },
+                  "extractors": {
+                    "applicationVersions": {
+                      "extractorOrCombinerType": "extractorInstancesByEntity",
+                      "applicationSection": "modelVersion",
+                      "parentName": "SelfApplicationVersion",
+                      "parentUuid": "c3f0facf-57d1-4fa8-b3fa-f2c007fdbe24",
+                      "orderBy": {
+                        "attributeName": "name",
+                        "direction": "ASC"
+                      }
+                    },
+                    "crosses": {
+                      "extractorOrCombinerType": "extractorInstancesByEntity",
+                      "applicationSection": "modelVersion",
+                      "parentName": "ApplicationVersionCrossEntityVersion",
+                      "parentUuid": "8bec933d-6287-4de7-8a88-5c24216de9f4",
+                      "orderBy": {
+                        "attributeName": "uuid",
+                        "direction": "ASC"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "testCompositeActionAssertions": [
+          {
+            "actionType": "compositeRunTestAssertion",
+            "actionLabel": "countSAV_V1-Baseline",
+            "nameGivenToResult": "countSAV_V1-Baseline",
+            "testAssertion": {
+              "testType": "testAssertion",
+              "testLabel": "countSAV_V1-Baseline",
+              "definition": {
+                "resultAccessPath": [
+                  "0"
+                ],
+                "resultTransformer": {
+                  "transformerType": "aggregate",
+                  "interpolation": "runtime",
+                  "function": "count",
+                  "applyTo": {
+                    "transformerType": "filterList",
+                    "interpolation": "runtime",
+                    "referenceToOuterObject": "__element__",
+                    "applyTo": {
+                      "transformerType": "getFromContext",
+                      "interpolation": "runtime",
+                      "referencePath": [
+                        "freezeState",
+                        "applicationVersions"
+                      ]
+                    },
+                    "predicate": {
+                      "transformerType": "boolExpr",
+                      "interpolation": "runtime",
+                      "operator": "==",
+                      "left": {
+                        "transformerType": "accessDynamicPath",
+                        "interpolation": "runtime",
+                        "objectAccessPath": [
+                          {
+                            "transformerType": "getFromContext",
+                            "interpolation": "runtime",
+                            "referenceName": "__element__"
+                          },
+                          "name"
+                        ]
+                      },
+                      "right": "V1-Baseline"
+                    }
+                  }
+                },
+                "expectedValue": {
+                  "count": 1
+                }
+              }
+            }
+          },
+          {
+            "actionType": "compositeRunTestAssertion",
+            "actionLabel": "savMigration_V1-Baseline",
+            "nameGivenToResult": "savMigration_V1-Baseline",
+            "testAssertion": {
+              "testType": "testAssertion",
+              "testLabel": "savMigration_V1-Baseline",
+              "definition": {
+                "resultTransformer": {
+                  "transformerType": "filterList",
+                  "interpolation": "runtime",
+                  "referenceToOuterObject": "__element__",
+                  "applyTo": {
+                    "transformerType": "getFromContext",
+                    "interpolation": "runtime",
+                    "referencePath": [
+                      "freezeState",
+                      "applicationVersions"
+                    ]
+                  },
+                  "predicate": {
+                    "transformerType": "boolExpr",
+                    "interpolation": "runtime",
+                    "operator": "==",
+                    "left": {
+                      "transformerType": "accessDynamicPath",
+                      "interpolation": "runtime",
+                      "objectAccessPath": [
+                        {
+                          "transformerType": "getFromContext",
+                          "interpolation": "runtime",
+                          "referenceName": "__element__"
+                        },
+                        "name"
+                      ]
+                    },
+                    "right": "V1-Baseline"
+                  }
+                },
+                "expectedValue": [
+                  {
+                    "name": "V1-Baseline",
+                    "modelStructureMigration": [],
+                    "modelCUDMigration": []
+                  }
+                ],
+                "ignoreAttributes": [
+                  "uuid",
+                  "previousVersion",
+                  "parentName",
+                  "parentUuid",
+                  "parentDefinitionVersionUuid",
+                  "selfApplication",
+                  "branch",
+                  "description",
+                  "conceptLevel",
+                  "defaultLabel",
+                  "timestamp",
+                  "storageAccess"
+                ]
+              }
+            }
+          },
+          {
+            "actionType": "compositeRunTestAssertion",
+            "actionLabel": "countCross_2",
+            "nameGivenToResult": "countCross_2",
+            "testAssertion": {
+              "testType": "testAssertion",
+              "testLabel": "countCross_2",
+              "definition": {
+                "resultAccessPath": [
+                  "0"
+                ],
+                "resultTransformer": {
+                  "transformerType": "aggregate",
+                  "interpolation": "runtime",
+                  "function": "count",
+                  "applyTo": {
+                    "transformerType": "getFromContext",
+                    "interpolation": "runtime",
+                    "referencePath": [
+                      "freezeState",
+                      "crosses"
+                    ]
+                  }
+                },
+                "expectedValue": {
+                  "count": 2
+                }
+              }
+            }
+          }
+        ],
+        "defaultApplicationName": "appForTest"
+      },
+      {
+        "miroirTestType": "runnerTest",
+        "miroirTestLabel": "Freeze V1 alter Publisher commit Freeze V2",
+        "runnerRef": "20d51c4c-52e5-4077-baf3-5e87bd75e496",
+        "testCompositeActionLabel": "Freeze V1 alter Publisher commit Freeze V2",
+        "initialModel": {
+          "transformerType": "getFromParameters",
+          "interpolation": "build",
+          "referenceName": "defaultAppForTestModel"
+        },
+        "testParams": {
+          "freezeApplicationVersion": {
+            "application": {
+              "transformerType": "getFromParameters",
+              "interpolation": "build",
+              "referenceName": "testApplicationUuid"
+            },
+            "versionName": "V2-Alter",
+            "branch": "eef01001-0004-4000-8000-000000000004"
+          }
+        },
+        "preRunnerCompositeActions": [
+          {
+            "actionType": "freezeApplicationVersion",
+            "actionLabel": "freeze_V1-Alter",
+            "endpoint": "7947ae40-eb34-4149-887b-15a9021e714e",
+            "payload": {
+              "application": {
+                "transformerType": "getFromParameters",
+                "interpolation": "build",
+                "referenceName": "testApplicationUuid"
+              },
+              "versionName": "V1-Alter",
+              "branch": "eef01001-0004-4000-8000-000000000004"
+            }
+          },
+          {
+            "actionType": "alterEntityAttribute",
+            "actionLabel": "alterEntityPublisher",
+            "endpoint": "7947ae40-eb34-4149-887b-15a9021e714e",
+            "payload": {
+              "application": {
+                "transformerType": "getFromParameters",
+                "interpolation": "build",
+                "referenceName": "testApplicationUuid"
+              },
+              "entityName": "Publisher",
+              "entityUuid": "a027c379-8468-43a5-ba4d-bf618be25cab",
+              "addColumns": [
+                {
+                  "name": "freezeTestAttr",
+                  "definition": {
+                    "type": "string",
+                    "optional": true,
+                    "tag": {
+                      "value": {
+                        "id": 99,
+                        "defaultLabel": "Freeze Test Attr"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "actionType": "commit",
+            "actionLabel": "commitLibraryLocalCache",
+            "endpoint": "7947ae40-eb34-4149-887b-15a9021e714e",
+            "payload": {
+              "application": {
+                "transformerType": "getFromParameters",
+                "interpolation": "build",
+                "referenceName": "testApplicationUuid"
+              }
+            }
+          }
+        ],
+        "preTestCompositeActions": [
+          {
+            "actionType": "compositeRunBoxedQueryAction",
+            "endpoint": "1e2ef8e6-7fdf-4e3f-b291-2e6e599fb2b5",
+            "actionLabel": "query_freezeState",
+            "nameGivenToResult": "freezeState",
+            "payload": {
+              "actionType": "runBoxedQueryAction",
+              "endpoint": "9e404b3c-368c-40cb-be8b-e3c28550c25e",
+              "payload": {
+                "application": {
+                  "transformerType": "getFromParameters",
+                  "interpolation": "build",
+                  "referenceName": "testApplicationUuid"
+                },
+                "applicationSection": "modelVersion",
+                "queryExecutionStrategy": "storage",
+                "query": {
+                  "queryType": "boxedQueryWithExtractorCombinerTransformer",
+                  "application": {
+                    "transformerType": "getFromParameters",
+                    "interpolation": "build",
+                    "referenceName": "testApplicationUuid"
+                  },
+                  "pageParams": {
+                    "currentDeploymentUuid": {
+                      "transformerType": "getFromParameters",
+                      "interpolation": "build",
+                      "referenceName": "testApplicationDeploymentUuid"
+                    }
+                  },
+                  "extractors": {
+                    "applicationVersions": {
+                      "extractorOrCombinerType": "extractorInstancesByEntity",
+                      "applicationSection": "modelVersion",
+                      "parentName": "SelfApplicationVersion",
+                      "parentUuid": "c3f0facf-57d1-4fa8-b3fa-f2c007fdbe24",
+                      "orderBy": {
+                        "attributeName": "name",
+                        "direction": "ASC"
+                      }
+                    },
+                    "crosses": {
+                      "extractorOrCombinerType": "extractorInstancesByEntity",
+                      "applicationSection": "modelVersion",
+                      "parentName": "ApplicationVersionCrossEntityVersion",
+                      "parentUuid": "8bec933d-6287-4de7-8a88-5c24216de9f4",
+                      "orderBy": {
+                        "attributeName": "uuid",
+                        "direction": "ASC"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "testCompositeActionAssertions": [
+          {
+            "actionType": "compositeRunTestAssertion",
+            "actionLabel": "countSAV_V2-Alter",
+            "nameGivenToResult": "countSAV_V2-Alter",
+            "testAssertion": {
+              "testType": "testAssertion",
+              "testLabel": "countSAV_V2-Alter",
+              "definition": {
+                "resultAccessPath": [
+                  "0"
+                ],
+                "resultTransformer": {
+                  "transformerType": "aggregate",
+                  "interpolation": "runtime",
+                  "function": "count",
+                  "applyTo": {
+                    "transformerType": "filterList",
+                    "interpolation": "runtime",
+                    "referenceToOuterObject": "__element__",
+                    "applyTo": {
+                      "transformerType": "getFromContext",
+                      "interpolation": "runtime",
+                      "referencePath": [
+                        "freezeState",
+                        "applicationVersions"
+                      ]
+                    },
+                    "predicate": {
+                      "transformerType": "boolExpr",
+                      "interpolation": "runtime",
+                      "operator": "==",
+                      "left": {
+                        "transformerType": "accessDynamicPath",
+                        "interpolation": "runtime",
+                        "objectAccessPath": [
+                          {
+                            "transformerType": "getFromContext",
+                            "interpolation": "runtime",
+                            "referenceName": "__element__"
+                          },
+                          "name"
+                        ]
+                      },
+                      "right": "V2-Alter"
+                    }
+                  }
+                },
+                "expectedValue": {
+                  "count": 1
+                }
+              }
+            }
+          },
+          {
+            "actionType": "compositeRunTestAssertion",
+            "actionLabel": "savMigration_V2-Alter",
+            "nameGivenToResult": "savMigration_V2-Alter",
+            "testAssertion": {
+              "testType": "testAssertion",
+              "testLabel": "savMigration_V2-Alter",
+              "definition": {
+                "resultTransformer": {
+                  "transformerType": "filterList",
+                  "interpolation": "runtime",
+                  "referenceToOuterObject": "__element__",
+                  "applyTo": {
+                    "transformerType": "getFromContext",
+                    "interpolation": "runtime",
+                    "referencePath": [
+                      "freezeState",
+                      "applicationVersions"
+                    ]
+                  },
+                  "predicate": {
+                    "transformerType": "boolExpr",
+                    "interpolation": "runtime",
+                    "operator": "==",
+                    "left": {
+                      "transformerType": "accessDynamicPath",
+                      "interpolation": "runtime",
+                      "objectAccessPath": [
+                        {
+                          "transformerType": "getFromContext",
+                          "interpolation": "runtime",
+                          "referenceName": "__element__"
+                        },
+                        "name"
+                      ]
+                    },
+                    "right": "V2-Alter"
+                  }
+                },
+                "expectedValue": [
+                  {
+                    "name": "V2-Alter",
+                    "modelStructureMigration": [],
+                    "modelCUDMigration": [
+                      {
+                        "kind": "alterEntityAttribute",
+                        "entityUuid": "a027c379-8468-43a5-ba4d-bf618be25cab",
+                        "name": "Publisher",
+                        "differingFields": [
+                          "mlSchema"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "ignoreAttributes": [
+                  "uuid",
+                  "previousVersion",
+                  "parentName",
+                  "parentUuid",
+                  "parentDefinitionVersionUuid",
+                  "selfApplication",
+                  "branch",
+                  "description",
+                  "conceptLevel",
+                  "defaultLabel",
+                  "timestamp",
+                  "storageAccess"
+                ]
+              }
+            }
+          },
+          {
+            "actionType": "compositeRunTestAssertion",
+            "actionLabel": "countCross_4",
+            "nameGivenToResult": "countCross_4",
+            "testAssertion": {
+              "testType": "testAssertion",
+              "testLabel": "countCross_4",
+              "definition": {
+                "resultAccessPath": [
+                  "0"
+                ],
+                "resultTransformer": {
+                  "transformerType": "aggregate",
+                  "interpolation": "runtime",
+                  "function": "count",
+                  "applyTo": {
+                    "transformerType": "getFromContext",
+                    "interpolation": "runtime",
+                    "referencePath": [
+                      "freezeState",
+                      "crosses"
+                    ]
+                  }
+                },
+                "expectedValue": {
+                  "count": 4
+                }
+              }
+            }
+          }
+        ],
+        "defaultApplicationName": "appForTest"
+      }
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "uuid": "2b4c25e0-6b0f-4f7d-aa68-1fdc079aead3",
+  "name": "returnValue",
+  "defaultLabel": "returnValue",
+  "description": "Returns any returnValue value provided in the configuration.",
+  "parentUuid": "a557419d-a288-4fb8-8a1e-971c86c113b8",
+  "parentDefinitionVersionUuid": "54a16d69-c1f0-4dd7-aba4-a2cda883586c",
+  "parentName": "TransformerDefinition",
+  "classification": "basic",
+  "transformerInterface": {
+    "inputOutput": {
+      "input": "undefined",
+      "output": "any"
+    },
+    "transformerParameterSchema": {
+      "transformerType": {
+        "type": "literal",
+        "definition": "returnValue"
+      },
+      "transformerDefinition": {
+        "type": "object",
+        "definition": {
+          "mlSchema": {
+            "type": "union",
+            "discriminator": "type",
+            "optInDiscriminator": true,
+            "optional": true,
+            "tag": {
+              "value": {
+                "defaultLabel": "Return type (mlSchema)",
+                "description": "Optional Jzod schema describing the type of the returned value.",
+                "initializeTo": {
+                  "initializeToType": "value",
+                  "value": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "definition": [
+              { "type": "object", "definition": { "type": { "type": "literal", "definition": "string" } } },
+              { "type": "object", "definition": { "type": { "type": "literal", "definition": "number" } } },
+              { "type": "object", "definition": { "type": { "type": "literal", "definition": "boolean" } } },
+              { "type": "object", "definition": { "type": { "type": "literal", "definition": "uuid" } } }
+            ]
+          },
+          "value": {
+            "type": "any",
+            "tag": {
+              "value": {
+                "initializeTo": {
+                  "initializeToType": "value",
+                  "value": "seize value..."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "transformerResultSchema": {
+      "returns": "mlSchema",
+      "definition": {
+        "type": "any"
+      }
+    }
+  },
+  "transformerImplementation": {
+    "transformerImplementationType": "libraryImplementation",
+    "inMemoryImplementationFunctionName": "handleTransformer_constant",
+    "sqlImplementationFunctionName": "sqlStringForConstantTransformer"
+  }
+}

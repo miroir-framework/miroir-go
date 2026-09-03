@@ -1,0 +1,101 @@
+{
+  "uuid": "1bbed895-7d5a-4541-97bd-4d5cf22b128c",
+  "parentName": "TransformerDefinition",
+  "parentUuid": "a557419d-a288-4fb8-8a1e-971c86c113b8",
+  "name": "entityDefinition_extractAttributes",
+  "defaultLabel": "Extract Attributes",
+  "classification": "metaModel",
+  "transformerInterface": {
+    "inputOutput": {
+      "input": "16dbfe28-e1d7-4f20-9ba4-c1a9873202ad",
+      "output": "array"
+    },
+    "transformerParameterSchema": {
+      "transformerType": {
+        "type": "literal",
+        "definition": "entityDefinition_extractAttributes"
+      },
+      "transformerDefinition": {
+        "type": "object",
+        "definition": {
+          "entityDefinition": {
+            "type": "schemaReference",
+            "definition": {
+              "absolutePath": "fe9b7d99-f216-44de-bb6e-60e1a1ebb739",
+              "relativePath": "entityVersion"
+            }
+          },
+          "attributeNames": {
+            "type": "array",
+            "definition": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "transformerResultSchema": {
+      "returns": "mlSchema",
+      "definition": {
+        "type":"array",
+        "definition": {
+          "type": "tuple",
+          "definition": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "any"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "transformerImplementation": {
+    "transformerImplementationType": "transformer",
+    "definition": {
+      "transformerType": "filterList",
+      "applyTo": {
+        "transformerType": "getObjectEntries",
+        "interpolation": "runtime",
+        "applyTo": {
+          "transformerType": "getFromContext",
+          "interpolation": "runtime",
+          "referencePath": ["entityDefinition", "mlSchema", "definition"]
+        }
+      },
+      "referenceToOuterObject": "attribute",
+      "predicate": {
+        "transformerType": "boolExpr",
+        "interpolation": "runtime",
+        "operator": "isNotNull",
+        "left": {
+          "transformerType": "find",
+          "interpolation": "runtime",
+          "applyTo": {
+            "transformerType": "getFromContext",
+            "interpolation": "runtime",
+            "referencePath": ["attributeNames"]
+          },
+          "referenceToOuterObject": "attributeName",
+          "predicate": {
+            "transformerType": "boolExpr",
+            "interpolation": "runtime",
+            "operator": "==",
+            "left": {
+              "transformerType": "getFromContext",
+              "interpolation": "runtime",
+              "referencePath": ["attribute", "0"]
+            },
+            "right": {
+              "transformerType": "getFromContext",
+              "interpolation": "runtime",
+              "referencePath": ["attributeName"]
+            }
+          }
+        }
+      }
+    }
+  }
+}
