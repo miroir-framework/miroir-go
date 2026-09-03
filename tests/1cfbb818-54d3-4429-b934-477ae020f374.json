@@ -1633,6 +1633,128 @@
           null
         ],
         "expectedValue": "type Box struct {\n\tCounts map[string]float64   `json:\"counts\"`\n\tTags   map[string]struct{}  `json:\"tags\"`\n\tFn     func(string) float64 `json:\"fn\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "union named object branches",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "a": {
+                "type": "object",
+                "definition": {
+                  "x": {
+                    "type": "string"
+                  }
+                }
+              },
+              "b": {
+                "type": "object",
+                "definition": {
+                  "y": {
+                    "type": "number"
+                  }
+                }
+              },
+              "u": {
+                "type": "union",
+                "discriminator": "type",
+                "definition": [
+                  {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "a"
+                    }
+                  },
+                  {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "b"
+                    }
+                  }
+                ]
+              }
+            },
+            "definition": {
+              "relativePath": "u"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type A struct {\n\tX string `json:\"x\"`\n}\ntype B struct {\n\tY float64 `json:\"y\"`\n}\ntype U interface {\n\tisU()\n}\ntype Foo U\n\nfunc (A) isU() {}\nfunc (B) isU() {}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "optional field of named object union",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "a": {
+                "type": "object",
+                "definition": {
+                  "x": {
+                    "type": "string"
+                  }
+                }
+              },
+              "b": {
+                "type": "object",
+                "definition": {
+                  "y": {
+                    "type": "number"
+                  }
+                }
+              },
+              "u": {
+                "type": "union",
+                "discriminator": "type",
+                "definition": [
+                  {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "a"
+                    }
+                  },
+                  {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "b"
+                    }
+                  }
+                ]
+              },
+              "w": {
+                "type": "object",
+                "definition": {
+                  "v": {
+                    "type": "schemaReference",
+                    "optional": true,
+                    "definition": {
+                      "relativePath": "u"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "w"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type A struct {\n\tX string `json:\"x\"`\n}\ntype B struct {\n\tY float64 `json:\"y\"`\n}\ntype U interface {\n\tisU()\n}\ntype W struct {\n\tV U `json:\"v,omitempty\"`\n}\ntype Foo W\n\nfunc (A) isU() {}\nfunc (B) isU() {}"
       }
     ]
   }

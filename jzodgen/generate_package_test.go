@@ -61,6 +61,18 @@ func TestGenerateBootstrapPackage(t *testing.T) {
 	if strings.Contains(src, "CoreTransformerForBuildPlusRuntimeAny") {
 		t.Error("transformer placeholder should map to any, not a named type")
 	}
+	if strings.Contains(src, "type JzodElement any") {
+		t.Error("JzodElement should be a sealed interface, not any")
+	}
+	if !strings.Contains(src, "type JzodElement interface") {
+		t.Error("missing type JzodElement interface")
+	}
+	if !strings.Contains(src, "func (JzodArray) isJzodElement()") {
+		t.Error("missing JzodArray marker method for JzodElement")
+	}
+	if strings.Contains(src, "Returns *JzodElement") {
+		t.Error("optional JzodElement field should not be a pointer to interface")
+	}
 	fset := token.NewFileSet()
 	if _, err := parser.ParseFile(fset, "jzod_miroir_bootstrap.go", src, parser.AllErrors); err != nil {
 		t.Fatalf("generated Go does not parse: %v", err)

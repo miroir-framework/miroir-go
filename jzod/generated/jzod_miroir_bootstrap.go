@@ -448,7 +448,9 @@ type JzodAttributePlainStringWithValidations struct {
 	Coerce      *bool                              `json:"coerce,omitempty"`
 	Validations *[]*JzodAttributeStringValidations `json:"validations,omitempty"`
 }
-type JzodElement any
+type JzodElement interface {
+	isJzodElement()
+}
 type JzodEnum struct {
 	Optional    *bool   `json:"optional,omitempty"`
 	Nullable    *bool   `json:"nullable,omitempty"`
@@ -595,7 +597,7 @@ type JzodFunction struct {
 	Type       string `json:"type"`
 	Definition struct {
 		Args    []JzodElement `json:"args"`
-		Returns *JzodElement  `json:"returns,omitempty"`
+		Returns JzodElement   `json:"returns,omitempty"`
 	} `json:"definition"`
 }
 type JzodLazy struct {
@@ -1409,3 +1411,22 @@ type JzodUnion struct {
 	Definition         []JzodElement `json:"definition"`
 }
 type JzodMiroirBootstrapSchema JzodElement
+
+func (JzodArray) isJzodElement()                               {}
+func (JzodPlainAttribute) isJzodElement()                      {}
+func (JzodAttributePlainDateWithValidations) isJzodElement()   {}
+func (JzodAttributePlainNumberWithValidations) isJzodElement() {}
+func (JzodAttributePlainStringWithValidations) isJzodElement() {}
+func (JzodEnum) isJzodElement()                                {}
+func (JzodFunction) isJzodElement()                            {}
+func (JzodLazy) isJzodElement()                                {}
+func (JzodLiteral) isJzodElement()                             {}
+func (JzodIntersection) isJzodElement()                        {}
+func (JzodMap) isJzodElement()                                 {}
+func (JzodObject) isJzodElement()                              {}
+func (JzodPromise) isJzodElement()                             {}
+func (JzodRecord) isJzodElement()                              {}
+func (JzodReference) isJzodElement()                           {}
+func (JzodSet) isJzodElement()                                 {}
+func (JzodTuple) isJzodElement()                               {}
+func (JzodUnion) isJzodElement()                               {}

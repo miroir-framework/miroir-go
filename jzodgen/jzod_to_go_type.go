@@ -18,6 +18,11 @@ type namedDecl struct {
 	expr string
 }
 
+type sumMethod struct {
+	recv  string
+	iface string
+}
+
 type generator struct {
 	env             map[string]any
 	names           map[string]any
@@ -25,6 +30,8 @@ type generator struct {
 	didEmit         map[string]bool
 	emitting        map[string]bool
 	inliningPartial map[string]bool
+	sumMembers      map[string][]string
+	sumMethods      []sumMethod
 }
 
 // JzodToGoType emits a Go defined type with the given name for a Jzod schema.
@@ -33,9 +40,17 @@ type generator struct {
 // lazy/eager references plus TypeCheck uuid lookup.
 func JzodToGoType(name string, schema any, env map[string]any) (string, error) {
 	g := newGenerator(env)
-	expr, err := g.goTypeExprAt(schema, false)
-	if err != nil {
-		return "", err
+	var expr string
+	if members, ok := g.namedObjectUnionMembers(schema); ok {
+		if err := g.emitSum(name, members); err != nil {
+			return "", err
+		}
+	} else {
+		var err error
+		expr, err = g.goTypeExprAt(schema, false)
+		if err != nil {
+			return "", err
+		}
 	}
 	var b strings.Builder
 	for _, d := range g.emitted {
@@ -51,6 +66,13 @@ func JzodToGoType(name string, schema any, env map[string]any) (string, error) {
 		b.WriteString(" ")
 		b.WriteString(expr)
 		b.WriteString("\n")
+	}
+	for _, m := range g.sumMethods {
+		b.WriteString("func (")
+		b.WriteString(m.recv)
+		b.WriteString(") is")
+		b.WriteString(m.iface)
+		b.WriteString("() {}\n")
 	}
 	return formatDecls(b.String())
 }
@@ -71,6 +93,7 @@ func newGenerator(env map[string]any) *generator {
 		didEmit:         map[string]bool{},
 		emitting:        map[string]bool{},
 		inliningPartial: map[string]bool{},
+		sumMembers:      map[string][]string{},
 	}
 }
 
@@ -200,8 +223,8 @@ func (g *generator) objectExpr(el map[string]any) (string, error) {
 		tag := "json:\"" + k + "\""
 		optional, _ := child["optional"].(bool)
 		nullable, _ := child["nullable"].(bool)
-		if (optional || nullable || partial) && !strings.HasPrefix(inner, "*") {
-			typ = "*" + inner
+		if optional || nullable || partial {
+			typ = g.pointerIfOptional(inner)
 		}
 		if optional || partial {
 			tag = "json:\"" + k + ",omitempty\""
@@ -228,7 +251,7 @@ func (g *generator) functionExpr(el map[string]any) (string, error) {
 				return "", err
 			}
 			if m, ok := item.(map[string]any); ok {
-				typ = pointerIfOptionalOrNullable(typ, m)
+				typ = g.pointerIfOptionalOrNullable(typ, m)
 			}
 			args = append(args, typ)
 		}
@@ -244,13 +267,37 @@ func (g *generator) functionExpr(el map[string]any) (string, error) {
 	return sig, nil
 }
 
-func pointerIfOptionalOrNullable(inner string, el map[string]any) string {
+func (g *generator) pointerIfOptionalOrNullable(inner string, el map[string]any) string {
 	optional, _ := el["optional"].(bool)
 	nullable, _ := el["nullable"].(bool)
-	if (optional || nullable) && !strings.HasPrefix(inner, "*") {
-		return "*" + inner
+	if optional || nullable {
+		return g.pointerIfOptional(inner)
 	}
 	return inner
+}
+
+func (g *generator) pointerIfOptional(inner string) string {
+	if strings.HasPrefix(inner, "*") || g.isInterfaceTypeExpr(inner) {
+		return inner
+	}
+	return "*" + inner
+}
+
+func (g *generator) isInterfaceTypeExpr(expr string) bool {
+	if expr == "" || strings.ContainsAny(expr, "*[]{}(), ") {
+		return false
+	}
+	if _, ok := g.sumMembers[expr]; ok {
+		return true
+	}
+	for k, v := range g.names {
+		if exportedIdent(k) == expr {
+			if _, ok := g.namedObjectUnionMembers(v); ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (g *generator) schemaRefExpr(el map[string]any, inField bool) (string, error) {
@@ -307,6 +354,11 @@ func (g *generator) emitNamed(key string, schema any) error {
 		return nil
 	}
 	g.emitting[typeName] = true
+	if members, ok := g.namedObjectUnionMembers(schema); ok {
+		err := g.emitSum(typeName, members)
+		g.emitting[typeName] = false
+		return err
+	}
 	expr, err := g.goTypeExprAt(schema, false)
 	g.emitting[typeName] = false
 	if err != nil {
@@ -317,8 +369,68 @@ func (g *generator) emitNamed(key string, schema any) error {
 	return nil
 }
 
+func (g *generator) emitSum(typeName string, members []string) error {
+	g.emitted = append(g.emitted, namedDecl{
+		name: typeName,
+		expr: "interface {\n\tis" + typeName + "()\n}",
+	})
+	g.didEmit[typeName] = true
+	g.sumMembers[typeName] = members
+	for _, m := range members {
+		g.sumMethods = append(g.sumMethods, sumMethod{recv: m, iface: typeName})
+	}
+	return nil
+}
+
+// namedObjectUnionMembers reports lazy schemaReferences to distinct object
+// types. Mixed unions, eager refs, and inline objects are not a compile-time sum.
+func (g *generator) namedObjectUnionMembers(schema any) ([]string, bool) {
+	el, ok := schema.(map[string]any)
+	if !ok || el["type"] != "union" {
+		return nil, false
+	}
+	list, ok := el["definition"].([]any)
+	if !ok || len(list) < 2 {
+		return nil, false
+	}
+	var members []string
+	seen := map[string]bool{}
+	for _, item := range list {
+		m, ok := item.(map[string]any)
+		if !ok || m["type"] != "schemaReference" {
+			return nil, false
+		}
+		def := refDefinition(m)
+		if eager, _ := def["eager"].(bool); eager {
+			return nil, false
+		}
+		rel, _ := def["relativePath"].(string)
+		if rel == "" || rel == transformerAnyRelativePath {
+			return nil, false
+		}
+		abs, _ := def["absolutePath"].(string)
+		target, err := g.resolve(abs, rel)
+		if err != nil || !isObjectType(target) {
+			return nil, false
+		}
+		name := exportedIdent(rel)
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		members = append(members, name)
+	}
+	if len(members) < 2 {
+		return nil, false
+	}
+	return members, true
+}
+
 func (g *generator) lazyRefExpr(rel string, inField bool) string {
 	name := exportedIdent(rel)
+	if g.isInterfaceTypeExpr(name) {
+		return name
+	}
 	if g.emitting[name] {
 		return "*" + name
 	}
