@@ -2,10 +2,10 @@
 
 > Analysis: port the **unit** MiroirTest JSON shape and the **execution machine** needed to run
 > leaves in Go. First suite: existing `mustache` JSON (`bdf83d4d-…`). Bootstrap self-parse stays
-> the #255 `go test`. `transformerTest` execution is #257.
+> the #2 `go test`. `transformerTest` execution is #4.
 
-Related issue: https://github.com/miroir-framework/miroir/issues/256
-Parent: [#254](https://github.com/miroir-framework/miroir/issues/254) · Prerequisite: [#255](https://github.com/miroir-framework/miroir/issues/255)
+Related issue: https://github.com/miroir-framework/miroir-go/issues/3
+Parent: [#1](https://github.com/miroir-framework/miroir-go/issues/1) · Prerequisite: [#2](https://github.com/miroir-framework/miroir-go/issues/2)
 Related analyses: [`../254-FEATURE-go-backend/analysis.md`](../254-FEATURE-go-backend/analysis.md) · [`../255-FEATURE-go-jzod-typecheck/analysis.md`](../255-FEATURE-go-jzod-typecheck/analysis.md) · [`../257-FEATURE-go-transformer-unit-runtime/analysis.md`](../257-FEATURE-go-transformer-unit-runtime/analysis.md)
 
 Key sources:
@@ -27,12 +27,12 @@ Key sources:
 | Decision | Choice |
 |---|---|
 | D1 — Package | **`go/miroirtest`** (loads JSON; calls `go/jzod` and a whitelist) |
-| D2 — First test | **Existing `mustache` suite** uuid `bdf83d4d-…` (6 `functionCallTest` leaves, same JSON as TS). No new MiroirTest asset. Bootstrap self-parse stays the #255 `go test` proof. |
-| D3 — Leaf types in scope | **`miroirTestSuite` + `functionCallTest`**. `queryTest` / `actionTest` / `runnerTest` fail closed. `transformerTest` is #257 (now implemented there). |
-| D4 — Comparison | Match TS order: deserialize sentinels → `jsonify` / `unNullify` / `removeUndefinedProperties` → deep equal. Modes **used by existing unit leaves** are in scope (`expectedValue`, `expectedError`, `expectedAction2ErrorType`, `expectUndefinedResult`, `assertions[]` + `resultAccessPath`, environment/fixture refs). `subExpectedValue` is a `transformerTest` field (#257). |
+| D2 — First test | **Existing `mustache` suite** uuid `bdf83d4d-…` (6 `functionCallTest` leaves, same JSON as TS). No new MiroirTest asset. Bootstrap self-parse stays the #2 `go test` proof. |
+| D3 — Leaf types in scope | **`miroirTestSuite` + `functionCallTest`**. `queryTest` / `actionTest` / `runnerTest` fail closed. `transformerTest` is #4 (now implemented there). |
+| D4 — Comparison | Match TS order: deserialize sentinels → `jsonify` / `unNullify` / `removeUndefinedProperties` → deep equal. Modes **used by existing unit leaves** are in scope (`expectedValue`, `expectedError`, `expectedAction2ErrorType`, `expectUndefinedResult`, `assertions[]` + `resultAccessPath`, environment/fixture refs). `subExpectedValue` is a `transformerTest` field (#4). |
 | D5 — Function whitelist | **Same `{ module, export }` strings as TS** `FUNCTION_CALL_REGISTRY`. Go implements those exports as they appear in existing unit `functionCallTest` leaves. |
 | D6 — Discovery | **Path / explicit file** in `go test`. Do not port `testMiroir` CLI, vitest `RUN_TEST`, or UI “Miroir Tests”. |
-| D7 — Corpus | **Same JSON files** as `miroir-test-app_deployment-miroir`. #256 AC = all **unit** `functionCallTest` suites in that tree (mustache, alterObject, EntityPrimaryKey, tools, jzod helper suites, …). `transformerTest` suites are #257. No forked/copied tests. |
+| D7 — Corpus | **Same JSON files** as `miroir-test-app_deployment-miroir`. #3 AC = all **unit** `functionCallTest` suites in that tree (mustache, alterObject, EntityPrimaryKey, tools, jzod helper suites, …). `transformerTest` suites are #4. No forked/copied tests. |
 
 ### D2 — First test shape
 
@@ -40,21 +40,21 @@ Key sources:
 
 | Option | Mechanism | Pros | Cons |
 |---|---|---|---|
-| D2-a. New MiroirTest JSON | Suite with one `functionCallTest` over `TypeCheck` | Fast #255 seam | **Withdrawn** — not identical to existing assets |
+| D2-a. New MiroirTest JSON | Suite with one `functionCallTest` over `TypeCheck` | Fast #2 seam | **Withdrawn** — not identical to existing assets |
 | **D2-b′. Existing `mustache` JSON** ★ | `bdf83d4d-…` 6 `functionCallTest` leaves | Identical asset; smallest existing `functionCallTest` suite | Needs Go `extractDoubleBracePatterns` |
-| D2-c. `pilot_transformer_plus` `4b18adc6-…` | Feature 196 / Phase 3a **practical** TS machine bootstrap (one `resolveConditionalSchema` `transformerTest`) | Already in the 39-key registry | Same problem as D2-b — transformer apply is #257 |
-| D2-d. Empty-suite walk only | `miroirTestSuiteWalk.ts:110-120` registers `(empty suite)` when `miroirTests` is empty | Thinnest walk | Does not prove `functionCallTest` or #255 |
+| D2-c. `pilot_transformer_plus` `4b18adc6-…` | Feature 196 / Phase 3a **practical** TS machine bootstrap (one `resolveConditionalSchema` `transformerTest`) | Already in the 39-key registry | Same problem as D2-b — transformer apply is #4 |
+| D2-d. Empty-suite walk only | `miroirTestSuiteWalk.ts:110-120` registers `(empty suite)` when `miroirTests` is empty | Thinnest walk | Does not prove `functionCallTest` or #2 |
 | D2-e. Hard-coded `go test` only | No JSON | Fast | No machine proof |
 
 **Decision:** D2-b′ (existing `mustache` JSON). User 2026-09-03: Go MiroirTests must be **identical** to the deployment assets. D2-a (new bootstrap `functionCallTest`) is **withdrawn**.
 
-**Handoff to #257:** `transformerTest` comparison (`subExpectedValue`, `unitTestExpectedValue ?? expectedValue`, ignore-attributes) is **not** this machine’s v1. #257 extends the comparison layer.
+**Handoff to #4:** `transformerTest` comparison (`subExpectedValue`, `unitTestExpectedValue ?? expectedValue`, ignore-attributes) is **not** this machine’s v1. #4 extends the comparison layer.
 
-There is **no** existing instance named “bootstrap” (51 files, 2026-09-03). Feature 196’s `miroirTest_schema_pilot_empty` `cebb6dc8-…` is **absent**. Today’s TS machine pilot is `pilot_transformer_plus` — rejected as #256 first leaf (D2-c). Integ “bootstrap” (`IntegrationTestBootstrap.ts`) is a third word.
+There is **no** existing instance named “bootstrap” (51 files, 2026-09-03). Feature 196’s `miroirTest_schema_pilot_empty` `cebb6dc8-…` is **absent**. Today’s TS machine pilot is `pilot_transformer_plus` — rejected as #3 first leaf (D2-c). Integ “bootstrap” (`IntegrationTestBootstrap.ts`) is a third word.
 
 ### D3 — Why not `transformerTest` here
 
-`jzodTypeCheck_TransformerTestSuite` (42 leaves) and `miroirCoreTransformers` (243 leaves) are `transformerTest`. Running them is #257 (`transformer_extended_apply_wrapper` semantics). This issue only needs enough structure to recurse suites and invoke a whitelist function.
+`jzodTypeCheck_TransformerTestSuite` (42 leaves) and `miroirCoreTransformers` (243 leaves) are `transformerTest`. Running them is #4 (`transformer_extended_apply_wrapper` semantics). This issue only needs enough structure to recurse suites and invoke a whitelist function.
 
 ---
 
@@ -66,7 +66,7 @@ There is **no** existing instance named “bootstrap” (51 files, 2026-09-03). 
 
 ## 2. Non-goals
 
-- `transformerTest` / `queryTest` / `actionTest` / `runnerTest` execution (#257 or later).
+- `transformerTest` / `queryTest` / `actionTest` / `runnerTest` execution (#4 or later).
 - Integration mode, playfields, `TestConfiguration` (#252), UI launcher (#197).
 - New MiroirTest JSON (withdrawn; identical existing assets only).
 - `testMiroir` CLI parity.
@@ -100,9 +100,9 @@ Leaf dispatch is `runMiroirTest` in `MiroirTestTools.ts:154` (`switch (leaf.miro
 
 `FunctionCallTestRegistry.ts` `resolveFunctionCallTarget`: whitelist `functionRef: { module, export }` only. Arbitrary paths are rejected.
 
-`FunctionCallTestTools.ts` deserializes JSON sentinels before invoke: `__miroirJsonUndefined`, `__fixtureRef`, `__miroirJsonSet`, `__miroirMatchPattern`, `__miroirEnvironmentRef`. Leaf fields include `expectedError`, `expectedAction2ErrorType`, `expectUndefinedResult`, `assertions[]` + `resultAccessPath`, `ignoreAttributes`. #256 D4 starts with `expectedValue` equality only; sentinels are out unless the bootstrap leaf needs them (it should not).
+`FunctionCallTestTools.ts` deserializes JSON sentinels before invoke: `__miroirJsonUndefined`, `__fixtureRef`, `__miroirJsonSet`, `__miroirMatchPattern`, `__miroirEnvironmentRef`. Leaf fields include `expectedError`, `expectedAction2ErrorType`, `expectUndefinedResult`, `assertions[]` + `resultAccessPath`, `ignoreAttributes`. #3 D4 starts with `expectedValue` equality only; sentinels are out unless the bootstrap leaf needs them (it should not).
 
-`jzodTypeCheck.test.ts` is a **`transformerTest`** host (#257), not a `functionCallTest` example.
+`jzodTypeCheck.test.ts` is a **`transformerTest`** host (#4), not a `functionCallTest` example.
 
 ### 3.3 Execution hosts (aligned)
 
@@ -113,22 +113,22 @@ Leaf dispatch is `runMiroirTest` in `MiroirTestTools.ts:154` (`switch (leaf.miro
 | CLI integ | `testMiroir -w miroir-standalone-app --mode integration` | **out** |
 | UI | Miroir Tests menu | unit today; integ #197 — **out** |
 
-Transformer leaves use `MiroirTransformerTestTools.ts` → `transformer_extended_apply_wrapper` (`TransformersForRuntime.ts:4032`). That call is **#257**.
+Transformer leaves use `MiroirTransformerTestTools.ts` → `transformer_extended_apply_wrapper` (`TransformersForRuntime.ts:4032`). That call is **#4**.
 
 ### 3.4 Comparison helpers (aligned)
 
-`packages/miroir-core/src/1_core/testing/test-expect.ts` (`jsonify`, vitest-like `expect`). Transformer tests also use `subExpectedValue`, `ignoreAttributes`, `retainAttributes`, `unitTestExpectedValue` (`MiroirTransformerTestTools.ts`). #256 D4 starts with full `expectedValue` equality only.
+`packages/miroir-core/src/1_core/testing/test-expect.ts` (`jsonify`, vitest-like `expect`). Transformer tests also use `subExpectedValue`, `ignoreAttributes`, `retainAttributes`, `unitTestExpectedValue` (`MiroirTransformerTestTools.ts`). #3 D4 starts with full `expectedValue` equality only.
 
 ### 3.5 Misaligned with “just run bootstrap”
 
-No bootstrap suite file exists. Bootstrap self-parse remains #255 `go test`. #256 uses existing `functionCallTest` JSON (D2-b′).
+No bootstrap suite file exists. Bootstrap self-parse remains #2 `go test`. #3 uses existing `functionCallTest` JSON (D2-b′).
 
 ## 4. Key reuse
 
 | Piece | Location |
 |-------|----------|
 | MiroirTest Entity / `mlSchema` | `a311f363-e238-4203-bdfc-29e8c160c26b` |
-| Bootstrap schema (argument) | `1e8dab4b-…` (#255) |
+| Bootstrap schema (argument) | `1e8dab4b-…` (#2) |
 | Whitelist pattern | `FunctionCallTestRegistry.ts` |
 | Expect / jsonify | `test-expect.ts` |
 
@@ -136,12 +136,12 @@ No bootstrap suite file exists. Bootstrap self-parse remains #255 `go test`. #25
 
 | # | Proposal | Impact | Effort | Verdict |
 |---|---|---|---|---|
-| 1 | `go/miroirtest` + existing `functionCallTest` JSON | Unblocks #257; identical assets | Med | **adopt** |
+| 1 | `go/miroirtest` + existing `functionCallTest` JSON | Unblocks #4; identical assets | Med | **adopt** |
 | 2 | New bootstrap suite JSON | Forks the test corpus | Low | reject (user: identical MiroirTests) |
-| 3 | Reuse `3aff508a-…` as first run | Pulls in transformer apply | Med | reject (owned by #257) |
+| 3 | Reuse `3aff508a-…` as first run | Pulls in transformer apply | Med | reject (owned by #4) |
 
 ---
 
 ## Next step
 
-Implemented and reviewed. `transformerTest` execution is #257.
+Implemented and reviewed. `transformerTest` execution is #4.

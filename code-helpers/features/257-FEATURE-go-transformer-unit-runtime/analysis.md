@@ -1,10 +1,10 @@
 # 257 — Go transformer runtime and existing unit tests
 
 > Analysis: port transformer **apply** and `transformerTest` execution so existing **unit**
-> MiroirTest assets (same JSON as TS) pass on Go. Validity proof for #254. Not integ / SQL.
+> MiroirTest assets (same JSON as TS) pass on Go. Validity proof for #1. Not integ / SQL.
 
-Related issue: https://github.com/miroir-framework/miroir/issues/257
-Parent: [#254](https://github.com/miroir-framework/miroir/issues/254) · Prerequisites: [#255](https://github.com/miroir-framework/miroir/issues/255) (blocked until done), [#256](https://github.com/miroir-framework/miroir/issues/256) (blocked until done)
+Related issue: https://github.com/miroir-framework/miroir-go/issues/4
+Parent: [#1](https://github.com/miroir-framework/miroir-go/issues/1) · Prerequisites: [#2](https://github.com/miroir-framework/miroir-go/issues/2) (blocked until done), [#3](https://github.com/miroir-framework/miroir-go/issues/3) (blocked until done)
 Related analyses: [`../254-FEATURE-go-backend/analysis.md`](../254-FEATURE-go-backend/analysis.md) · [`../255-FEATURE-go-jzod-typecheck/analysis.md`](../255-FEATURE-go-jzod-typecheck/analysis.md) · [`../256-FEATURE-go-miroirtest-unit-machine/analysis.md`](../256-FEATURE-go-miroirtest-unit-machine/analysis.md)
 
 Key sources:
@@ -13,10 +13,10 @@ Key sources:
 - [`packages/miroir-core/src/2_domain/TransformersForRuntime.ts`](../../../packages/miroir-core/src/2_domain/TransformersForRuntime.ts) (`transformer_extended_apply_wrapper` at line 4032)
 - [`packages/miroir-core/src/5_tests/MiroirTransformerTestTools.ts`](../../../packages/miroir-core/src/5_tests/MiroirTransformerTestTools.ts)
 - Suite `miroirCoreTransformers` `33f60ac8-6511-43b1-b153-6b86e3177532`
-- Suite `jzodTypeCheck_TransformerTestSuite` `3aff508a-8a9f-4384-ba50-cc696411eba5` (42 leaves; #255 already used payloads)
+- Suite `jzodTypeCheck_TransformerTestSuite` `3aff508a-8a9f-4384-ba50-cc696411eba5` (42 leaves; #2 already used payloads)
 
 **Document role:** analysis and architectural decision record.
-**Status:** implemented and reviewed (2026-09-03). `go/transformer` apply + #256 `transformerTest` runner execute the same 317 unit `transformerTest` leaves as TS.
+**Status:** implemented and reviewed (2026-09-03). `go/transformer` apply + #3 `transformerTest` runner execute the same 317 unit `transformerTest` leaves as TS.
 
 ---
 
@@ -24,12 +24,12 @@ Key sources:
 
 | Decision | Choice |
 |---|---|
-| D1 — Package | **`go/transformer`** apply + handlers; #256 machine gains a `transformerTest` leaf |
+| D1 — Package | **`go/transformer`** apply + handlers; #3 machine gains a `transformerTest` leaf |
 | D2 — Apply entry | **Port `transformer_extended_apply_wrapper` contract** (step `build`/`runtime`, params, context). Not `applyTransformerDEFUNCT`. |
 | D3 — Definitions | **Load JSON** TransformerDefinition instances. Composite (`transformerImplementationType: "transformer"`) = apply the inner graph. Library = Go handler map keyed by `transformerType`. |
-| D4 — In-scope unit suites | **`miroirCoreTransformers`** (243 leaves) is the **validity** suite. **`jzodTypeCheck_TransformerTestSuite`** (42) re-runs #255 via the machine. Smaller unit `transformerTest` suites (table §3.3) are in scope if they stay unit-only. |
+| D4 — In-scope unit suites | **`miroirCoreTransformers`** (243 leaves) is the **validity** suite. **`jzodTypeCheck_TransformerTestSuite`** (42) re-runs #2 via the machine. Smaller unit `transformerTest` suites (table §3.3) are in scope if they stay unit-only. |
 | D5 — Handler order | **Demand-driven by failing leaves** of D4 suites. Unsupported `transformerType` fails closed. |
-| D6 — `mustache` / `alterObject` CLI suites | **Out of AC** — they are `functionCallTest` helpers (#256 optional). `mustacheStringTemplate` **transformer** is in `miroirCoreTransformers`. |
+| D6 — `mustache` / `alterObject` CLI suites | **Out of AC** — they are `functionCallTest` helpers (#3 optional). `mustacheStringTemplate` **transformer** is in `miroirCoreTransformers`. |
 | D7 — Parity | A failing TS unit test is not a Go bug. A passing TS unit test in D4 must pass on Go against the **same JSON**. |
 | D8 — SQL / integ | **Out.** Unit compare is `unitTestExpectedValue ?? expectedValue` at `MiroirTransformerTestTools.ts:247-248`. Lines 82–84 are the **integration** helper `resolveTransformerIntegrationExpectedValue` only. |
 
@@ -43,14 +43,14 @@ Key sources:
 | D4-b. Only `mustache`+`alterObject` keys | Those 9 `functionCallTest`s | Small | Does **not** execute transformers |
 | D4-c. All 51 MiroirTests | Everything | — | Includes `actionTest` / `queryTest` / integ-shaped runners |
 
-**Decision:** D4-a. Tracer leaf (document order in `33f60ac8-…`): `buildTransformerTests` / `constants` / `constantArray` / `resolve basic build transformer return value for empty Array` — `transformerType: "returnValue"`, `runTestStep: "build"`, `expectedValue: []`. `jzodTypeCheck` `test010_literal` is the second machine proof (reuses #255 payloads). `pilot_transformer_plus` `4b18adc6-…` is a one-leaf `resolveConditionalSchema` suite — useful early #257 slice, not the epic validity gate.
+**Decision:** D4-a. Tracer leaf (document order in `33f60ac8-…`): `buildTransformerTests` / `constants` / `constantArray` / `resolve basic build transformer return value for empty Array` — `transformerType: "returnValue"`, `runTestStep: "build"`, `expectedValue: []`. `jzodTypeCheck` `test010_literal` is the second machine proof (reuses #2 payloads). `pilot_transformer_plus` `4b18adc6-…` is a one-leaf `resolveConditionalSchema` suite — useful early #4 slice, not the epic validity gate.
 
 ---
 
 ## 1. Goals
 
 1. **Apply a transformer** — In order to compute ML results as a \<Go runtime\>, I can apply a transformer JSON and get the same success/failure as TS unit apply.
-2. **Run `transformerTest`** — In order to reuse assets as a \<test author\>, I can execute existing unit `transformerTest` JSON on the #256 machine.
+2. **Run `transformerTest`** — In order to reuse assets as a \<test author\>, I can execute existing unit `transformerTest` JSON on the #3 machine.
 3. **Validity** — In order to trust the Go approach as a \<platform maintainer\>, I can see the in-scope unit transformer suites pass on Go.
 
 ## 2. Non-goals
@@ -78,7 +78,7 @@ Library handlers are keyed by `transformerImplementation.inMemoryImplementationF
 
 **No `transformerTest` oracle:** `getActiveDeployment` (`d554c31b-…`) and composite `spreadSheetToJzodSchema`. Out of AC unless a later slice adds tests; fail closed is enough.
 
-`jzodTypeCheck` definition uuid `a3f7b5c2-1e8d-4a9b-9c7e-6f2d3e8a1b5c` — library implementation wrapping #255.
+`jzodTypeCheck` definition uuid `a3f7b5c2-1e8d-4a9b-9c7e-6f2d3e8a1b5c` — library implementation wrapping #2.
 
 ### 3.2 Apply path (aligned)
 
@@ -91,10 +91,10 @@ Unit transformer tests (`MiroirTransformerTestTools.ts:168-194`) call `transform
 | Name | Uuid | `transformerTest` count | Notes |
 |---|---|---|---|
 | `miroirCoreTransformers` | `33f60ac8-6511-43b1-b153-6b86e3177532` | 243 | Validity corpus |
-| `jzodTypeCheck_TransformerTestSuite` | `3aff508a-…` | 42 | Same payloads as #255 |
+| `jzodTypeCheck_TransformerTestSuite` | `3aff508a-…` | 42 | Same payloads as #2 |
 | `defaultValueForMLSchema` | `3d8570ba-…` | 11 | unit |
 | `unfoldSchemaOnce` | `dd06922d-…` | 8 | unit |
-| `resolveConditionalSchema` | `10bd8532-…` | 5 | unit; #255 D8 deferred engine |
+| `resolveConditionalSchema` | `10bd8532-…` | 5 | unit; #2 D8 deferred engine |
 | `resolveSchemaReferenceInContext` | `02a34783-…` | 3 | unit |
 | `adminTransformers` | `8f07f7a2-…` | 1 | |
 | `metaModelTransformersTest` | `a9a39db6-…` | 1 | CLI key `metaModelTransformers` |
@@ -124,8 +124,8 @@ Unit transformer tests (`MiroirTransformerTestTools.ts:168-194`) call `transform
 | 45 definitions | `a557419d-…` instances |
 | Core suite | `33f60ac8-…` |
 | Typecheck suite | `3aff508a-…` |
-| #255 `TypeCheck` | `go/jzod` |
-| #256 machine | `go/miroirtest` |
+| #2 `TypeCheck` | `go/jzod` |
+| #3 machine | `go/miroirtest` |
 
 ## 5. Proposals / options
 

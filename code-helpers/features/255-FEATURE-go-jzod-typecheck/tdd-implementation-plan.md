@@ -1,20 +1,20 @@
-# Issue #255 — TDD Implementation Plan
+# Issue #2 — TDD Implementation Plan
 
 > Vertical TDD slices (RED → GREEN each). Tests exercise the public Go API `TypeCheck`
 > against **real** applicative JSON (`jzodMiroirBootstrapSchema`, `jzodTypeCheck_TransformerTestSuite`
 > leaves) — no fixture copies, no mocks.
-> Vitest exception: there is no Go MiroirTest machine yet (#256). Vehicle is `go test`.
+> Vitest exception: there is no Go MiroirTest machine yet (#3). Vehicle is `go test`.
 > Tracer: `test010_literal` payload from suite `3aff508a-…` returns `status: "ok"`.
 >
 > **Execution model:** human-in-the-loop. No slice contains a commit step — commits happen
 > only when the user explicitly asks. Each slice ends with its Validation commands; on
 > success its Realization summary is appended and its Status flips to ✅ DONE.
 
-Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir/issues/255
+Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir-go/issues/2
 Prerequisite: none (epic [`../254-FEATURE-go-backend/analysis.md`](../254-FEATURE-go-backend/analysis.md))
 Working branch: `254-FEATURE-go-backend`
 
-**Resume note:** Plan reviewed (2026-09-03). Slices 0–7 ✅. Slice 8 docs + `unit-go-jzod` done; full reset+nonreg is #254 Slice 4.
+**Resume note:** Plan reviewed (2026-09-03). Slices 0–7 ✅. Slice 8 docs + `unit-go-jzod` done; full reset+nonreg is #1 Slice 4.
 
 ---
 
@@ -24,7 +24,7 @@ Working branch: `254-FEATURE-go-backend`
 - Load Miroir bootstrap JSON; `TypeCheck` with `jzodTypeCheck` result shape.
 - Prove using suite `3aff508a-…` leaf payloads and bootstrap self-parse.
 
-This plan does **not** add a MiroirTest runner (#256) or transformer apply (#257).
+This plan does **not** add a MiroirTest runner (#3) or transformer apply (#4).
 
 ---
 
@@ -82,7 +82,7 @@ No new model uuids in this issue.
 | TS typecheck suite (parity oracle, not the Go vehicle) | `npm run testMiroir -w miroir-core -- --suites jzodTypeCheck --mode unit` |
 | Step gate | `./build-all.sh reset && npm run nonreg` |
 
-**Vitest exception:** `go test` — not reachable through MiroirTest on Go until #256.
+**Vitest exception:** `go test` — not reachable through MiroirTest on Go until #3.
 
 Suite JSON path (from `go/jzod`, repo-relative):
 
@@ -125,7 +125,7 @@ TS stub-accept (`jzodTypeCheck.ts:2254-2260`) returns top-level `typePath: []` w
 
 ### Goal
 
-Lock the applicative files #255 interprets so later slices cannot silently retarget sibling `jzod` or the fundamental schema uuid.
+Lock the applicative files #2 interprets so later slices cannot silently retarget sibling `jzod` or the fundamental schema uuid.
 
 ### 0.1 RED → GREEN — inventory
 
@@ -417,7 +417,7 @@ Registered `1e8dab4b-…` on `ModelEnvironment.AbsoluteSchemas`. `TypeCheck(defi
 ### 8.2 Docs
 
 - `analysis.md` status → implemented; AGENTS.md / `docs/contributing/testing.md` one line: Go jzod tests live under `go/`.
-- Epic analysis sequencing: #255 ✅.
+- Epic analysis sequencing: #2 ✅.
 
 ### 8.3 Issue-directory cleanup
 
@@ -431,7 +431,7 @@ Registered `1e8dab4b-…` on `ModelEnvironment.AbsoluteSchemas`. `TypeCheck(defi
 
 Automated equivalent: `go test ./jzod`.
 
-### AC checklist (#255)
+### AC checklist (#2)
 
 | Criterion | Proven by | Status |
 |---|---|---|

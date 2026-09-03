@@ -1,21 +1,21 @@
-# Issue #254 — TDD Implementation Plan (epic index)
+# Issue #1 — TDD Implementation Plan (epic index)
 
 > Epic sequencing only. Implementation lives on the child plans. Tests use the **same**
 > MiroirTest / schema JSON as `miroir-test-app_deployment-miroir` — no forked suites.
 >
 > **Execution model:** human-in-the-loop. No slice contains a commit step.
 
-Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir/issues/254
+Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir-go/issues/1
 Children: [`../255-FEATURE-go-jzod-typecheck/tdd-implementation-plan.md`](../255-FEATURE-go-jzod-typecheck/tdd-implementation-plan.md) · [`../256-FEATURE-go-miroirtest-unit-machine/tdd-implementation-plan.md`](../256-FEATURE-go-miroirtest-unit-machine/tdd-implementation-plan.md) · [`../257-FEATURE-go-transformer-unit-runtime/tdd-implementation-plan.md`](../257-FEATURE-go-transformer-unit-runtime/tdd-implementation-plan.md)
 Working branch: `254-FEATURE-go-backend`
 
-**Resume note:** Index reviewed and realized (2026-09-03). #255–#257 done. Epic nonreg green (`20260903T005406Z`).
+**Resume note:** Index reviewed and realized (2026-09-03). #2–#4 done. Epic nonreg green (`20260903T005406Z`).
 
 ---
 
 ## Scope
 
-- Sequence #255 → #256 → #257.
+- Sequence #2 → #3 → #4.
 - Shared JSON is the source of truth.
 - `go/` module layout.
 
@@ -27,9 +27,9 @@ This plan does **not** implement HTTP / `miroir-server` replacement.
 
 | Slice | Title | Status | Primary proof |
 |---|---|---|---|
-| 1 | #255 Go Jzod TypeCheck | ✅ | `go test -C go ./jzod` |
-| 2 | #256 unit MiroirTest machine | ✅ | existing `functionCallTest` JSON |
-| 3 | #257 transformer apply + unit `transformerTest` | ✅ | same `transformerTest` JSON as TS |
+| 1 | #2 Go Jzod TypeCheck | ✅ | `go test -C go ./jzod` |
+| 2 | #3 unit MiroirTest machine | ✅ | existing `functionCallTest` JSON |
+| 3 | #4 transformer apply + unit `transformerTest` | ✅ | same `transformerTest` JSON as TS |
 | 4 | Epic nonreg | ✅ | `./build-all.sh reset && npm run nonreg` (`20260903T005406Z`) |
 
 ---
@@ -44,8 +44,8 @@ Copied from the epic analysis (D1–D7) plus 2026-09-03: **no new / copied Miroi
 | D2 | Module at `go/` |
 | D3 | Port `jzodTypeCheck`, not Zod |
 | D4 | Existing JSON is source of truth |
-| D5 | Bootstrap self-parse is #255 `go test`; #256 first suite is existing `mustache` JSON |
-| D6 | #257 unit `transformerTest` only |
+| D5 | Bootstrap self-parse is #2 `go test`; #3 first suite is existing `mustache` JSON |
+| D6 | #4 unit `transformerTest` only |
 | D7 | Same files as TS; Go interprets them |
 
 ---
@@ -68,7 +68,7 @@ No new model uuids at epic level. One nonreg step: `unit-go-jzod` (`go test -C g
 
 ---
 
-## Slice 1 — #255
+## Slice 1 — #2
 
 See child plan. Status: ✅
 
@@ -78,7 +78,7 @@ See child plan. Status: ✅
 
 ---
 
-## Slice 2 — #256
+## Slice 2 — #3
 
 See child plan. Status: ✅. Existing `functionCallTest` JSON only (364 leaves).
 
@@ -88,7 +88,7 @@ See child plan. Status: ✅. Existing `functionCallTest` JSON only (364 leaves).
 
 ---
 
-## Slice 3 — #257
+## Slice 3 — #4
 
 See child plan. Status: ✅. Existing `transformerTest` JSON only (317 leaves).
 
@@ -109,13 +109,13 @@ go test -C go ./...
 ./build-all.sh reset && npm run nonreg
 ```
 
-### AC checklist (#254)
+### AC checklist (#1)
 
 | Criterion | Proven by | Status |
 |---|---|---|
-| Go TypeCheck on Miroir bootstrap / suite JSON | #255 | ✅ |
-| Go unit MiroirTest machine on **same** JSON | #256 | ✅ |
-| Go transformer unit suites on **same** JSON | #257 | ✅ |
+| Go TypeCheck on Miroir bootstrap / suite JSON | #2 | ✅ |
+| Go unit MiroirTest machine on **same** JSON | #3 | ✅ |
+| Go transformer unit suites on **same** JSON | #4 | ✅ |
 | TS non-regression | nonreg after each child | ✅ |
 
 ### Realization

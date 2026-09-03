@@ -2,10 +2,10 @@
 
 > Analysis and sequencing record for a Go port of the Miroir Meta-Language runtime, as the first
 > increment toward replacing `miroir-server`. This document is the epic frame; implementation
-> decisions live on the step analyses (#255, #256, #257).
+> decisions live on the step analyses (#2, #3, #4).
 
-Related issue: https://github.com/miroir-framework/miroir/issues/254
-Sub-issues: [#255](https://github.com/miroir-framework/miroir/issues/255) · [#256](https://github.com/miroir-framework/miroir/issues/256) · [#257](https://github.com/miroir-framework/miroir/issues/257)
+Related issue: https://github.com/miroir-framework/miroir-go/issues/1
+Sub-issues: [#2](https://github.com/miroir-framework/miroir-go/issues/2) · [#3](https://github.com/miroir-framework/miroir-go/issues/3) · [#4](https://github.com/miroir-framework/miroir-go/issues/4)
 Related analyses: [`../255-FEATURE-go-jzod-typecheck/analysis.md`](../255-FEATURE-go-jzod-typecheck/analysis.md) · [`../256-FEATURE-go-miroirtest-unit-machine/analysis.md`](../256-FEATURE-go-miroirtest-unit-machine/analysis.md) · [`../257-FEATURE-go-transformer-unit-runtime/analysis.md`](../257-FEATURE-go-transformer-unit-runtime/analysis.md)
 
 Key sources:
@@ -15,7 +15,7 @@ Key sources:
 - MiroirTest Entity `a311f363-e238-4203-bdfc-29e8c160c26b` · TransformerDefinition Entity `a557419d-a288-4fb8-8a1e-971c86c113b8`
 
 **Document role:** analysis and sequencing / architectural decision record for the epic.
-**Status:** implemented (2026-09-03). Analyses + TDD plans reviewed. #255–#257 done against the same MiroirTest / schema JSON as `miroir-test-app_deployment-miroir`.
+**Status:** implemented (2026-09-03). Analyses + TDD plans reviewed. #2–#4 done against the same MiroirTest / schema JSON as `miroir-test-app_deployment-miroir`.
 
 ---
 
@@ -23,9 +23,9 @@ Key sources:
 
 | Step | Issue | Title | Status |
 |---|---|---|---|
-| 1 | #255 | Go Jzod definitions + runtime typecheck | ✅ |
-| 2 | #256 | Go unit MiroirTest structure + execution machine | ✅ |
-| 3 | #257 | Go transformer runtime + existing **unit** transformer tests | ✅ |
+| 1 | #2 | Go Jzod definitions + runtime typecheck | ✅ |
+| 2 | #3 | Go unit MiroirTest structure + execution machine | ✅ |
+| 3 | #4 | Go transformer runtime + existing **unit** transformer tests | ✅ |
 | later | unscheduled | HTTP / DomainController / stores / MCP / SPA serving | after this epic |
 
 Implementation: analysis → Composer review → TDD plan → Composer review → vertical slices. `./build-all.sh reset && npm run nonreg` at the end of each step (TS non-regression). Go tests join `scripts/nonreg-manifest.json` when a plan’s final slice says so.
@@ -40,9 +40,9 @@ Implementation: analysis → Composer review → TDD plan → Composer review �
 | D2 — Module layout | **`go/` at repo root** (outside npm `workspaces: packages/*`) |
 | D3 — What “port Jzod + typecheck” means | **Miroir `jzodTypeCheck`**, not `jzodToZod` / Zod |
 | D4 — Schema source of truth | **Existing JSON** (`jzodMiroirBootstrapSchema`, MiroirTest instances, TransformerDefinitions). Go interprets; no schema fork. |
-| D5 — First MiroirTest | **#255** bootstrap self-parse is `go test` on `jzodMiroirBootstrapSchema`. **#256** first suite is existing `mustache` JSON (`bdf83d4d-…`). No new MiroirTest asset. |
+| D5 — First MiroirTest | **#2** bootstrap self-parse is `go test` on `jzodMiroirBootstrapSchema`. **#3** first suite is existing `mustache` JSON (`bdf83d4d-…`). No new MiroirTest asset. |
 | D6 — Step 3 test scope | **Unit only** (`transformerTest` / `testMiroir --mode unit`). No integ / SQL. |
-| D7 — Proof vehicle | **Same JSON assets** as TS. Step 1 may call `TypeCheck` from `go test` against those payloads before the #256 machine exists. |
+| D7 — Proof vehicle | **Same JSON assets** as TS. Step 1 may call `TypeCheck` from `go test` against those payloads before the #3 machine exists. |
 
 **Rationale:** the Node server is a thin host (`server.ts` wires `miroir-core`, stores, MCP, CopilotKit). Replacing it without a Go ML runtime is theatre. The three steps are the smallest stack that can declare JSON, run a unit test, and execute transformers — the same assets TS already uses.
 
@@ -65,14 +65,14 @@ Implementation: analysis → Composer review → TDD plan → Composer review �
 |---|---|---|---|
 | **D2-a. `go/`** ★ | `go.mod` at `go/`; packages `jzod`, `miroirtest`, `transformer` | npm `packages/*` does not swallow it; sibling to `packages/` | New top-level tree |
 | D2-b. `packages/miroir-go` | Dir under `packages/` with `go.mod`, no `package.json` | npm ignores dirs without `package.json` (`miroir-designer` precedent) | Name says “package” while this epic is a runtime, not the HTTP host |
-| D2-c. `packages/miroir-server-go` | Mirror of `miroir-server` | Good **later** name for the HTTP binary | Misleading for #255–#257 (no REST yet) |
+| D2-c. `packages/miroir-server-go` | Mirror of `miroir-server` | Good **later** name for the HTTP binary | Misleading for #2–#4 (no REST yet) |
 | D2-d. Sibling repo (like `miroir-kotlin`) | Separate checkout | Isolation | User asked to proceed **in this repo** on a branch |
 
 **Decision:** D2-a for this epic’s ML runtime (`go/jzod`, `go/miroirtest`, `go/transformer`). A later HTTP-host issue may add `go/cmd/server` or `packages/miroir-server-go` without moving the libraries. Working branch: `254-FEATURE-go-backend`.
 
 ### D3 — Port target for typecheck
 
-**Status:** Accepted — Miroir `jzodTypeCheck` (#255).
+**Status:** Accepted — Miroir `jzodTypeCheck` (#2).
 
 Sibling `@miroir-framework/jzod` converts Jzod → Zod and parses with Zod (`jzodToZod` in `jzod/src/facade.ts`). Miroir’s runtime does **not** use that path for instance checking. It uses `jzodTypeCheck` (`packages/miroir-core/src/1_core/jzod/jzodTypeCheck.ts:871`), which returns `ResolvedJzodSchemaReturnType` (`status: "ok" | "error"` plus `resolvedSchema` / `keyMap`). The `jzodTypeCheck` **transformer** (`a3f7b5c2-1e8d-4a9b-9c7e-6f2d3e8a1b5c`) is a thin wrapper (`jzodTypeCheckTransformer` at `jzodTypeCheck.ts:2297`) that always passes `defaultMiroirModelEnvironment`.
 
@@ -93,9 +93,9 @@ Accepted as stated. Detail and rejected alternatives sit on the step analyses.
 ## 2. Non-goals
 
 - Replacing or deleting `miroir-server` (later, unscheduled).
-- Integration MiroirTests, SQL-compiled transformers, query/extractor/combiner engines (#256 / #257 non-goals, and later issues).
-- Porting the full MiroirTest **corpus** in #256 (machine only; first leaf = bootstrap).
-- jzod-ts-style generated Go types as a product (#255 non-goal).
+- Integration MiroirTests, SQL-compiled transformers, query/extractor/combiner engines (#3 / #4 non-goals, and later issues).
+- Porting the full MiroirTest **corpus** in #3 (machine only; first leaf = bootstrap).
+- jzod-ts-style generated Go types as a product (#2 non-goal).
 - CopilotKit / MCP / persistence backends.
 
 ## 3. Current state
@@ -112,25 +112,25 @@ Accepted as stated. Detail and rejected alternatives sit on the step analyses.
 | Unit MiroirTest | Entity `a311f363-…`; **51** instance files; **39** keys in `MIROIR_TEST_SUITE_REGISTRY_NAMES` | `testMiroir --mode unit` → `runMiroirTests` | All 51 roots are `miroirTestSuite`. The other 12 are runner/action suites routed via standalone-app. |
 | Transformers | 45 `TransformerDefinition` instances | `transformer_extended_apply_wrapper` | 43 `libraryImplementation`, 2 `transformer` (composite) |
 
-Sibling `jzod` still owns `jzodBootstrapElementSchema` (`jzod/src/JzodInterface.ts`) and `jzodToZod`. That bootstrap is **not** the Miroir asset (different file, extra TS-only comments / `tag` / `metaSchema` shape). #255 uses the Miroir JSON.
+Sibling `jzod` still owns `jzodBootstrapElementSchema` (`jzod/src/JzodInterface.ts`) and `jzodToZod`. That bootstrap is **not** the Miroir asset (different file, extra TS-only comments / `tag` / `metaSchema` shape). #2 uses the Miroir JSON.
 
 ### 3.3 “Bootstrap test” (name collision, resolved)
 
 | Meaning | Where | Role in this epic |
 |---|---|---|
 | Jzod README self-parse | `jzodToZod(jzodBootstrapElementSchema).parse(...)` | Library demo; not a MiroirTest |
-| Miroir bootstrap asset | `jzodMiroirBootstrapSchema` defaultLabel: *“Parses itself.”* | **#255** `go test` self-parse |
-| Historical MiroirTest “bootstrap” | Feature 196 empty-suite `cebb6dc8-…` (**absent** today); practical stand-in `pilot_transformer_plus` `4b18adc6-…` (one `transformerTest` of `resolveConditionalSchema`) | **Not** #256’s first leaf — it is a `transformerTest` and belongs to #257 |
+| Miroir bootstrap asset | `jzodMiroirBootstrapSchema` defaultLabel: *“Parses itself.”* | **#2** `go test` self-parse |
+| Historical MiroirTest “bootstrap” | Feature 196 empty-suite `cebb6dc8-…` (**absent** today); practical stand-in `pilot_transformer_plus` `4b18adc6-…` (one `transformerTest` of `resolveConditionalSchema`) | **Not** #3’s first leaf — it is a `transformerTest` and belongs to #4 |
 | Integ “bootstrap” | `IntegrationTestBootstrap.ts`, playfield reset | Out of epic (integ) |
-| `jzodTypeCheck_TransformerTestSuite` | uuid `3aff508a-…`, **42** `transformerTest` leaves | Typecheck **corpus**; needs #257’s runner. #255 reuses the payloads via `go test`. |
+| `jzodTypeCheck_TransformerTestSuite` | uuid `3aff508a-…`, **42** `transformerTest` leaves | Typecheck **corpus**; needs #4’s runner. #2 reuses the payloads via `go test`. |
 
-#256 does **not** add a bootstrap `functionCallTest`. It runs existing unit `functionCallTest` JSON (tracer: `mustache`). `pilot_transformer_plus` is a `transformerTest` and belongs to #257.
+#3 does **not** add a bootstrap `functionCallTest`. It runs existing unit `functionCallTest` JSON (tracer: `mustache`). `pilot_transformer_plus` is a `transformerTest` and belongs to #4.
 
 ### 3.4 `mustache` / `alterObject` vs transformer unit tests (misaligned with casual naming)
 
 `AGENTS.md` examples `testMiroir --suites mustache,alterObject --mode unit` are **`functionCallTest`** suites (`extractDoubleBracePatterns`, `alterObjectAtPath`) — not `transformerTest`s of `mustacheStringTemplate`.
 
-The large **transformer** unit corpus is `miroirCoreTransformers` uuid `33f60ac8-6511-43b1-b153-6b86e3177532` (**52 suite nodes** = 1 root + 51 nested, **243** `transformerTest` leaves). #257 owns that. #256 may register a few `functionCallTest` helpers; it does not port transformer apply.
+The large **transformer** unit corpus is `miroirCoreTransformers` uuid `33f60ac8-6511-43b1-b153-6b86e3177532` (**52 suite nodes** = 1 root + 51 nested, **243** `transformerTest` leaves). #4 owns that. #3 may register a few `functionCallTest` helpers; it does not port transformer apply.
 
 ## 4. Key reuse
 
@@ -149,7 +149,7 @@ The large **transformer** unit corpus is `miroirCoreTransformers` uuid `33f60ac8
 
 | # | Proposal | Impact | Effort | Verdict |
 |---|---|---|---|---|
-| 1 | Interpret shared JSON in `go/` | High (enables #256/#257) | High | **adopt** |
+| 1 | Interpret shared JSON in `go/` | High (enables #3/#4) | High | **adopt** |
 | 2 | Generate Go structs from Jzod and stop | Low (cannot run tests) | Med | reject |
 | 3 | Wrap Node/Zod from Go | Low (not a replacement) | Low | reject |
 

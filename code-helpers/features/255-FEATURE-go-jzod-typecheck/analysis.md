@@ -2,10 +2,10 @@
 
 > Analysis: port the Jzod *language* (Miroir bootstrap schema) and Miroir’s native `jzodTypeCheck`
 > to Go so JSON values can be declared and checked at runtime. First proving case: bootstrap
-> self-parse. Does not port the MiroirTest machine (#256) or transformer apply (#257).
+> self-parse. Does not port the MiroirTest machine (#3) or transformer apply (#4).
 
-Related issue: https://github.com/miroir-framework/miroir/issues/255
-Parent: [#254](https://github.com/miroir-framework/miroir/issues/254) · Unblocks: #256, #257
+Related issue: https://github.com/miroir-framework/miroir-go/issues/2
+Parent: [#1](https://github.com/miroir-framework/miroir-go/issues/1) · Unblocks: #3, #4
 Related analyses: [`../254-FEATURE-go-backend/analysis.md`](../254-FEATURE-go-backend/analysis.md)
 
 Key sources:
@@ -24,7 +24,7 @@ Key sources:
 
 | Decision | Choice |
 |---|---|
-| D1 — Package | **`go/jzod`** inside module `go/` (#254 D2) |
+| D1 — Package | **`go/jzod`** inside module `go/` (#1 D2) |
 | D2 — Typecheck semantics | **Port full `ResolvedJzodSchemaReturnType`** (`status`, `rawSchema`, `resolvedSchema`, `valuePath`, `typePath`, `schemaReferenceName`, `keyMap`; errors also `error`, `rawJzodSchemaType`, `value`). Not Zod `parse`. |
 | D3 — Schema source | **Load `jzodMiroirBootstrapSchema` JSON** (uuid `1e8dab4b-…`). Do not transpile sibling `jzodBootstrapElementSchema`. |
 | D4 — Value / schema representation | **`encoding/json` → `any` / typed accessors**. No generated Go structs as the product. |
@@ -34,7 +34,7 @@ Key sources:
 | D8 — `resolveConditionalSchema` | **Skip unless `currentDefaultValue` and `reduxDeploymentsState` are present** (`jzodTypeCheck.ts:941-955`). Empty `currentValuePath: []` is truthy in JS and does **not** skip. Unit leaves omit the two optionals. |
 | D9 — `valueToJzod` | **Port the sliver** for `type: "any"`: `buildAnyObjectEntry` **and** `buildAnySubnodeKeyMap` (`jzodTypeCheck.ts:103`, `:141`). Not the full sibling product. |
 
-**Rationale:** #257’s `jzodTypeCheck` transformer tests compare full `expectedValue` objects. A boolean `valid/invalid` API would force a rewrite. Loading the Miroir JSON avoids drifting from the asset that “parses itself.”
+**Rationale:** #4’s `jzodTypeCheck` transformer tests compare full `expectedValue` objects. A boolean `valid/invalid` API would force a rewrite. Loading the Miroir JSON avoids drifting from the asset that “parses itself.”
 
 ### D2 — Typecheck semantics
 
@@ -85,11 +85,11 @@ Enumerated 2026-09-03 from that file:
 
 Sibling `jzod/src/JzodInterface.ts` `jzodBootstrapElementSchema` is a **different artefact** (TS constant, richer `tag`/`metaSchema` comments). Copying it would fork the language Miroir actually stores.
 
-### D5 — Proof without #256
+### D5 — Proof without #3
 
 **Status:** Accepted — `go test` imports the real suite JSON and calls `TypeCheck` with each leaf’s `transformer.mlSchema` / `transformer.valueObject`, comparing to `expectedValue` (or `status`+`resolvedSchema` first).
 
-This is the skill’s “import real applicative assets, not fixture copies.” The suite is a `transformerTest` list; #255 does **not** interpret `transformerType`. #257 will run the same file through the machine.
+This is the skill’s “import real applicative assets, not fixture copies.” The suite is a `transformerTest` list; #2 does **not** interpret `transformerType`. #4 will run the same file through the machine.
 
 ---
 
@@ -101,11 +101,11 @@ This is the skill’s “import real applicative assets, not fixture copies.” 
 
 ## 2. Non-goals
 
-- MiroirTest runner / `functionCallTest` dispatch (#256).
-- `transformer_extended_apply_wrapper` and the 45 TransformerDefinitions (#257).
+- MiroirTest runner / `functionCallTest` dispatch (#3).
+- `transformer_extended_apply_wrapper` and the 45 TransformerDefinitions (#4).
 - `jzodToZod`, `zodToJzod`, `jzod-ts` codegen, Jzod→JSON-Schema product (`jzodToJsonSchema` suite).
 - Full `defaultMiroirModelEnvironment` / carry-on / fundamental schema generation (`getMiroirFundamentalJzodSchema.ts`).
-- `resolveConditionalSchema` engine unless a #255 leaf requires the `reduxDeploymentsState` path.
+- `resolveConditionalSchema` engine unless a #2 leaf requires the `reduxDeploymentsState` path.
 - Real value-checking for TS stub-accept types (`function`, `promise`, `map`, `set`, `lazy`, `intersection`, …) beyond echoing the schema with `status: "ok"` (`jzodTypeCheck.ts:2241-2270`). Do **not** fail closed on those types.
 
 ## 3. Current state
@@ -165,9 +165,9 @@ First leaf `test010_literal`: `mlSchema = { type: "literal", definition: "myLite
 
 `jzodTypeCheck` switch (`:981+`) **fully** handles: `schemaReference`, `object`, `union`, `record`, `literal`, `enum`, `tuple`, `array`, `any`, `uuid`, `string`, `number`, `bigint`, `boolean`, `date`. **Stub-accept** (`status: "ok"`, schema echoed, `:2241-2270`): `undefined`, `never`, `unknown`, `void`, `intersection`, `promise`, `set`, `function`, `map`, `lazy`. Bootstrap self-parse typechecks those constructors **as values of the meta-schema**. A top-level `{ type: "function", … }` value-check in TS is stub-ok; Go must match.
 
-Another TS consumer (not a #255 proof): `checkModelValidationInstance` in `ModelValidationTools.ts:158` calls `jzodTypeCheck` with empty paths.
+Another TS consumer (not a #2 proof): `checkModelValidationInstance` in `ModelValidationTools.ts:158` calls `jzodTypeCheck` with empty paths.
 
-Exported helpers in the same file (`unionObjectChoices`, `selectUnionBranchFromDiscriminator`, …) already have **`functionCallTest`** suites (`unionObjectChoices` `14319c8e-…`, `selectUnionBranchFromDiscriminator` `84e67b10-…`). Those suites are **#256** (machine) + optional extra #255 `go test` if we port the helpers as public Go functions. Not required to close #255 if `TypeCheck` internals stay unexported.
+Exported helpers in the same file (`unionObjectChoices`, `selectUnionBranchFromDiscriminator`, …) already have **`functionCallTest`** suites (`unionObjectChoices` `14319c8e-…`, `selectUnionBranchFromDiscriminator` `84e67b10-…`). Those suites are **#3** (machine) + optional extra #2 `go test` if we port the helpers as public Go functions. Not required to close #2 if `TypeCheck` internals stay unexported.
 
 ### 3.5 `fe9b7d99-…` vs `1e8dab4b-…` (do not conflate)
 
@@ -185,14 +185,14 @@ Typecheck **interface** Jzod literals in `jzodTypeCheckInterface.ts` (`keyMapEnt
 | Bootstrap JSON | `1e8dab4b-65a3-4686-922e-ce89a2d62aa9` |
 | Typecheck suite JSON | `3aff508a-8a9f-4384-ba50-cc696411eba5` |
 | Result types (TS) | `jzodTypeCheckInterface.ts` `ResolvedJzodSchemaReturnType*` |
-| Transformer wrapper (later #257) | `jzodTypeCheckTransformer` `:2297`; definition `a3f7b5c2-1e8d-4a9b-9c7e-6f2d3e8a1b5c` |
+| Transformer wrapper (later #4) | `jzodTypeCheckTransformer` `:2297`; definition `a3f7b5c2-1e8d-4a9b-9c7e-6f2d3e8a1b5c` |
 | `ANY_SCHEMA` / implicit union | `jzodTypeCheck.ts:56-87` |
 
 ## 5. Proposals / options
 
 | # | Proposal | Impact | Effort | Verdict |
 |---|---|---|---|---|
-| 1 | Interpreter in `go/jzod` + `go test` on suite JSON + bootstrap | Unblocks #256/#257 | High | **adopt** |
+| 1 | Interpreter in `go/jzod` + `go test` on suite JSON + bootstrap | Unblocks #3/#4 | High | **adopt** |
 | 2 | Generate Go types from bootstrap and typecheck via `encoding/json` tags only | Cannot express unions/refs | Med | reject |
 | 3 | Call TS `jzodTypeCheck` via Node child process | Not a Go port | Low | reject |
 
@@ -200,4 +200,4 @@ Typecheck **interface** Jzod literals in `jzodTypeCheckInterface.ts` (`keyMapEnt
 
 ## Next step
 
-Implemented and reviewed. Child issues #256 / #257 are realized on the same JSON assets.
+Implemented and reviewed. Child issues #3 / #4 are realized on the same JSON assets.

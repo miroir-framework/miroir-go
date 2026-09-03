@@ -1,14 +1,14 @@
-# Issue #257 — TDD Implementation Plan
+# Issue #4 — TDD Implementation Plan
 
 > Vertical TDD slices. Go applies transformers and runs **the same** unit `transformerTest`
-> JSON as `miroir-test-app_deployment-miroir` (no copies). Vehicle: `go test` via the #256
+> JSON as `miroir-test-app_deployment-miroir` (no copies). Vehicle: `go test` via the #3
 > machine + `go/transformer` apply.
 > Tracer: `miroirCoreTransformers` / `buildTransformerTests` / `constants` / `constantArray` /
 > `resolve basic build transformer return value for empty Array` (`returnValue` → `[]`).
 >
 > **Execution model:** human-in-the-loop. No slice contains a commit step.
 
-Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir/issues/257
+Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir-go/issues/4
 Prerequisites: [`../255-FEATURE-go-jzod-typecheck/`](../255-FEATURE-go-jzod-typecheck/) · [`../256-FEATURE-go-miroirtest-unit-machine/`](../256-FEATURE-go-miroirtest-unit-machine/)
 Working branch: `254-FEATURE-go-backend`
 
@@ -20,7 +20,7 @@ Working branch: `254-FEATURE-go-backend`
 
 - `go/transformer`: `Apply` matching `transformer_extended_apply_wrapper` unit contract.
 - Load TransformerDefinition JSON `a557419d-…`.
-- #256 machine gains `transformerTest` (unit compare: `subExpectedValue` or `unitTestExpectedValue ?? expectedValue`).
+- #3 machine gains `transformerTest` (unit compare: `subExpectedValue` or `unitTestExpectedValue ?? expectedValue`).
 - Suites: `33f60ac8-…` (243), `3aff508a-…` (42), plus smaller unit `transformerTest` suites in §3.3 of the analysis.
 
 This plan does **not** run integ/SQL or `queryTest` / `actionTest` / `runnerTest`.
@@ -49,7 +49,7 @@ This plan does **not** run integ/SQL or `queryTest` / `actionTest` / `runnerTest
 | D3 | Load definition JSON; library vs composite |
 | D4 | `miroirCoreTransformers` + typecheck suite + other unit `transformerTest` files |
 | D5 | Demand-driven handlers |
-| D6 | `mustache`/`alterObject` CLI suites are #256 |
+| D6 | `mustache`/`alterObject` CLI suites are #3 |
 | D7 | Same JSON; passing TS unit leaf must pass on Go |
 | D8 | Unit compare at `MiroirTransformerTestTools.ts:247-248` / `subExpectedValue` |
 
@@ -203,7 +203,7 @@ go test -C go ./miroirtest
 
 (If `unit-go-jzod` / `unit-go-miroirtest` already cover `./...`, fold rather than duplicate.)
 
-### AC checklist (#257)
+### AC checklist (#4)
 
 | Criterion | Proven by | Status |
 |---|---|---|

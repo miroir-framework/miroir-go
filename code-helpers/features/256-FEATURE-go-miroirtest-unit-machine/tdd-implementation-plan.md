@@ -1,4 +1,4 @@
-# Issue #256 — TDD Implementation Plan
+# Issue #3 — TDD Implementation Plan
 
 > Vertical TDD slices. The Go machine executes **the same** MiroirTest JSON as
 > `packages/miroir-test-app_deployment-miroir` (no copies, no new suite files).
@@ -8,7 +8,7 @@
 >
 > **Execution model:** human-in-the-loop. No slice contains a commit step.
 
-Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir/issues/256
+Analysis: [`./analysis.md`](./analysis.md) · Issue: https://github.com/miroir-framework/miroir-go/issues/3
 Prerequisite: [`../255-FEATURE-go-jzod-typecheck/`](../255-FEATURE-go-jzod-typecheck/)
 Working branch: `254-FEATURE-go-backend`
 
@@ -22,7 +22,7 @@ Working branch: `254-FEATURE-go-backend`
 - Whitelist uses TS `{ module, export }` strings.
 - AC: all **unit** `functionCallTest` suites in the miroir deployment MiroirTest directory.
 
-This plan does **not** run `transformerTest` (#257) or add new JSON assets.
+This plan does **not** run `transformerTest` (#4) or add new JSON assets.
 
 ---
 
@@ -45,7 +45,7 @@ This plan does **not** run `transformerTest` (#257) or add new JSON assets.
 |---|---|
 | D1 | `go/miroirtest` |
 | D2 | Existing `mustache` JSON — no new asset |
-| D3 | `miroirTestSuite` + `functionCallTest`; others fail closed until #257 |
+| D3 | `miroirTestSuite` + `functionCallTest`; others fail closed until #4 |
 | D4 | `expectedValue` deep JSON equality (v1); other modes as existing leaves require |
 | D5 | Same `functionRef` module/export as TS |
 | D6 | Path / uuid in `go test` |
@@ -178,7 +178,7 @@ Every unit `functionCallTest` suite file in the MiroirTest directory passes on G
 
 ### 3.1 RED
 
-Table-driven: discover files whose walked leaves are all `functionCallTest` (or mixed — run only `functionCallTest` leaves, skip `transformerTest` until #257).
+Table-driven: discover files whose walked leaves are all `functionCallTest` (or mixed — run only `functionCallTest` leaves, skip `transformerTest` until #4).
 
 ### 3.2 GREEN
 
@@ -192,7 +192,7 @@ go test -C go ./miroirtest
 
 ### Realization
 
-`TestUnitFunctionCallSuites` walks the same 51 files and runs every `functionCallTest` leaf (364). Sentinels and comparison modes used by those leaves are implemented. Mixed files run FC leaves only (transformer leaves go to #257).
+`TestUnitFunctionCallSuites` walks the same 51 files and runs every `functionCallTest` leaf (364). Sentinels and comparison modes used by those leaves are implemented. Mixed files run FC leaves only (transformer leaves go to #4).
 
 ---
 
@@ -202,7 +202,7 @@ go test -C go ./miroirtest
 
 ### Goal
 
-Walking a `transformerTest` leaf returns a clear “not implemented” until #257 (do not fake-pass).
+Walking a `transformerTest` leaf returns a clear “not implemented” until #4 (do not fake-pass).
 
 ### Validation
 
@@ -212,7 +212,7 @@ go test -C go ./miroirtest -run FailClosed
 
 ### Realization
 
-`TestFailClosedQueryTest`: `queryTest` / `actionTest` / `runnerTest` fail closed. `transformerTest` is implemented in #257 (no longer fail-closed).
+`TestFailClosedQueryTest`: `queryTest` / `actionTest` / `runnerTest` fail closed. `transformerTest` is implemented in #4 (no longer fail-closed).
 
 ---
 
@@ -232,7 +232,7 @@ go test -C go ./miroirtest -run FailClosed
 }
 ```
 
-### AC checklist (#256)
+### AC checklist (#3)
 
 | Criterion | Proven by | Status |
 |---|---|---|
