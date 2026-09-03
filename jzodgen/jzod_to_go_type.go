@@ -131,6 +131,28 @@ func (g *generator) goTypeExprAt(schema any, inField bool) (string, error) {
 			return "", err
 		}
 		return "map[string]" + inner, nil
+	case "map":
+		pair, ok := el["definition"].([]any)
+		if !ok || len(pair) != 2 {
+			return "", fmt.Errorf("JzodToGoType map definition must be a [key, value] pair")
+		}
+		key, err := g.goTypeExprAt(pair[0], true)
+		if err != nil {
+			return "", err
+		}
+		val, err := g.goTypeExprAt(pair[1], true)
+		if err != nil {
+			return "", err
+		}
+		return "map[" + key + "]" + val, nil
+	case "set":
+		inner, err := g.goTypeExprAt(el["definition"], true)
+		if err != nil {
+			return "", err
+		}
+		return "map[" + inner + "]struct{}", nil
+	case "function":
+		return g.functionExpr(el)
 	case "tuple":
 		list, ok := el["definition"].([]any)
 		if !ok {
@@ -187,6 +209,44 @@ func (g *generator) objectExpr(el map[string]any) (string, error) {
 		})
 	}
 	return structExpr(fields), nil
+}
+
+func (g *generator) functionExpr(el map[string]any) (string, error) {
+	def, _ := el["definition"].(map[string]any)
+	if def == nil {
+		return "func()", nil
+	}
+	var args []string
+	if list, ok := def["args"].([]any); ok {
+		for _, item := range list {
+			typ, err := g.goTypeExprAt(item, true)
+			if err != nil {
+				return "", err
+			}
+			if m, ok := item.(map[string]any); ok {
+				typ = pointerIfOptionalOrNullable(typ, m)
+			}
+			args = append(args, typ)
+		}
+	}
+	sig := "func(" + strings.Join(args, ", ") + ")"
+	if def["returns"] != nil {
+		ret, err := g.goTypeExprAt(def["returns"], true)
+		if err != nil {
+			return "", err
+		}
+		sig += " " + ret
+	}
+	return sig, nil
+}
+
+func pointerIfOptionalOrNullable(inner string, el map[string]any) string {
+	optional, _ := el["optional"].(bool)
+	nullable, _ := el["nullable"].(bool)
+	if (optional || nullable) && !strings.HasPrefix(inner, "*") {
+		return "*" + inner
+	}
+	return inner
 }
 
 func (g *generator) schemaRefExpr(el map[string]any, inField bool) (string, error) {

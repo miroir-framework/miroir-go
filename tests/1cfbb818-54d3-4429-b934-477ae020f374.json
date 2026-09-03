@@ -1435,6 +1435,204 @@
           null
         ],
         "expectedValue": "type Node struct {\n\tExtra *Node `json:\"extra\"`\n}\ntype Foo Node"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "map string to number",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "M",
+          {
+            "type": "map",
+            "definition": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type M map[string]float64"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "set of string",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Tags",
+          {
+            "type": "set",
+            "definition": {
+              "type": "string"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Tags map[string]struct{}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "function args and returns",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "F",
+          {
+            "type": "function",
+            "definition": {
+              "args": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "returns": {
+                "type": "number"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type F func(string, float64) float64"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "function args no returns",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "F",
+          {
+            "type": "function",
+            "definition": {
+              "args": [
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          null
+        ],
+        "expectedValue": "type F func(string)"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "function optional nullable arg",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "F",
+          {
+            "type": "function",
+            "definition": {
+              "args": [
+                {
+                  "type": "string",
+                  "optional": true,
+                  "nullable": true
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "returns": {
+                "type": "number"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type F func(*string, float64) float64"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "map bool key",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "M",
+          {
+            "type": "map",
+            "definition": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type M map[bool]string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object map set function fields",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Box",
+          {
+            "type": "object",
+            "definition": {
+              "counts": {
+                "type": "map",
+                "definition": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "tags": {
+                "type": "set",
+                "definition": {
+                  "type": "string"
+                }
+              },
+              "fn": {
+                "type": "function",
+                "definition": {
+                  "args": [
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "returns": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Box struct {\n\tCounts map[string]float64   `json:\"counts\"`\n\tTags   map[string]struct{}  `json:\"tags\"`\n\tFn     func(string) float64 `json:\"fn\"`\n}"
       }
     ]
   }
