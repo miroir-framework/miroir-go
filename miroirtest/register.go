@@ -2,6 +2,7 @@ package miroirtest
 
 import (
 	"github.com/miroir-framework/miroir/go/jzod"
+	"github.com/miroir-framework/miroir/go/jzodgen"
 	"github.com/miroir-framework/miroir/go/transformer"
 )
 
@@ -183,6 +184,13 @@ func registerJzodHelpers() {
 		},
 		"stripVirtualAttributesFromInstance": func(args []any) (any, error) {
 			return transformer.StripVirtualAttributesFromInstance(argAt(args, 0), argAt(args, 1))
+		},
+	}
+	registry["miroir-go/jzodgen"] = map[string]Fn{
+		"JzodToGoType": func(args []any) (any, error) {
+			name := fmtSprint(undefToNil(argAt(args, 0)))
+			env, _ := asMapOK(undefToNil(argAt(args, 2)))
+			return jzodgen.JzodToGoType(name, undefToNil(argAt(args, 1)), env)
 		},
 	}
 }

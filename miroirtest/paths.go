@@ -24,3 +24,13 @@ func MiroirTestDir() string {
 func MiroirTestFile(uuid string) string {
 	return filepath.Join(MiroirTestDir(), uuid+".json")
 }
+
+// TestsDir is Go-local MiroirTest JSON (not the mirrored TS corpus).
+func TestsDir() string {
+	return filepath.Join(packageDir(), "..", "tests")
+}
+
+// TestsFile returns the JSON path for a Go-local MiroirTest uuid.
+func TestsFile(uuid string) string {
+	return filepath.Join(TestsDir(), uuid+".json")
+}

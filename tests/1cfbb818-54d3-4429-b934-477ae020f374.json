@@ -1,0 +1,468 @@
+{
+  "uuid": "1cfbb818-54d3-4429-b934-477ae020f374",
+  "parentName": "MiroirTest",
+  "parentUuid": "a311f363-e238-4203-bdfc-29e8c160c26b",
+  "name": "jzodToGoType",
+  "selfApplication": "360fcf1f-f0d4-4f8a-9262-07886e70fa15",
+  "branch": "ad1ddc4e-556e-4598-9cff-706a2bde0be7",
+  "description": "Go-local functionCallTest suite for jzodgen.JzodToGoType",
+  "definition": {
+    "miroirTestType": "miroirTestSuite",
+    "miroirTestLabel": "jzodgen.JzodToGoType",
+    "miroirTests": [
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "named string",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "string"
+          },
+          null
+        ],
+        "expectedValue": "type Foo string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "named boolean",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Flag",
+          {
+            "type": "boolean"
+          },
+          null
+        ],
+        "expectedValue": "type Flag bool"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain number",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "number"
+          },
+          null
+        ],
+        "expectedValue": "type N float64"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain bigint",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "bigint"
+          },
+          null
+        ],
+        "expectedValue": "type N string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain uuid",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "uuid"
+          },
+          null
+        ],
+        "expectedValue": "type N string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain date",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "date"
+          },
+          null
+        ],
+        "expectedValue": "type N string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain any",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "any"
+          },
+          null
+        ],
+        "expectedValue": "type N any"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain unknown",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "unknown"
+          },
+          null
+        ],
+        "expectedValue": "type N any"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain undefined",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "undefined"
+          },
+          null
+        ],
+        "expectedValue": "type N any"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain void",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "void"
+          },
+          null
+        ],
+        "expectedValue": "type N any"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain null",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "null"
+          },
+          null
+        ],
+        "expectedValue": "type N any"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "plain never",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "N",
+          {
+            "type": "never"
+          },
+          null
+        ],
+        "expectedValue": "type N struct{}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "array of string",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Names",
+          {
+            "type": "array",
+            "definition": {
+              "type": "string"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Names []string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "record of string",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Dict",
+          {
+            "type": "record",
+            "definition": {
+              "type": "string"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Dict map[string]string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "tuple string boolean",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Pair",
+          {
+            "type": "tuple",
+            "definition": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          null
+        ],
+        "expectedValue": "type Pair struct {\n\tE0 string\n\tE1 bool\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object one string field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Person",
+          {
+            "type": "object",
+            "definition": {
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Person struct {\n\tName string `json:\"name\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object optional field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Person",
+          {
+            "type": "object",
+            "definition": {
+              "name": {
+                "type": "string",
+                "optional": true
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Person struct {\n\tName *string `json:\"name,omitempty\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object two fields",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Person",
+          {
+            "type": "object",
+            "definition": {
+              "age": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Person struct {\n\tAge  float64 `json:\"age\"`\n\tName string  `json:\"name\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "empty object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Empty",
+          {
+            "type": "object",
+            "definition": {}
+          },
+          null
+        ],
+        "expectedValue": "type Empty struct{}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "nested object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Wrapper",
+          {
+            "type": "object",
+            "definition": {
+              "inner": {
+                "type": "object",
+                "definition": {
+                  "x": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Wrapper struct {\n\tInner struct {\n\t\tX string `json:\"x\"`\n\t} `json:\"inner\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "array of objects",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "People",
+          {
+            "type": "array",
+            "definition": {
+              "type": "object",
+              "definition": {
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type People []struct {\n\tName string `json:\"name\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "camelCase field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ref",
+          {
+            "type": "object",
+            "definition": {
+              "relativePath": {
+                "type": "string"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Ref struct {\n\tRelativePath string `json:\"relativePath\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object nullable field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Person",
+          {
+            "type": "object",
+            "definition": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Person struct {\n\tName *string `json:\"name\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object partial",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Person",
+          {
+            "type": "object",
+            "partial": true,
+            "definition": {
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Person struct {\n\tName *string `json:\"name,omitempty\"`\n}"
+      }
+    ]
+  }
+}

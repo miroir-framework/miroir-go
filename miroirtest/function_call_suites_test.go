@@ -7,7 +7,13 @@ import (
 )
 
 func TestUnitFunctionCallSuites(t *testing.T) {
-	entries, err := os.ReadDir(MiroirTestDir())
+	runFunctionCallJSONDir(t, MiroirTestDir())
+	runFunctionCallJSONDir(t, TestsDir())
+}
+
+func runFunctionCallJSONDir(t *testing.T, dir string) {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -15,7 +21,7 @@ func TestUnitFunctionCallSuites(t *testing.T) {
 		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
 			continue
 		}
-		path := filepath.Join(MiroirTestDir(), e.Name())
+		path := filepath.Join(dir, e.Name())
 		doc, err := LoadFile(path)
 		if err != nil {
 			t.Fatal(err)
