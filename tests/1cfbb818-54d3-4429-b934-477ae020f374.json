@@ -1178,6 +1178,263 @@
           null
         ],
         "expectedValue": "type B A\ntype A string\ntype Foo B"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference eager partial object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "o": {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "string"
+                  },
+                  "b": {
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            "definition": {
+              "partial": true,
+              "relativePath": "o",
+              "eager": true
+            }
+          },
+          null
+        ],
+        "expectedValue": "type O struct {\n\tA string  `json:\"a\"`\n\tB float64 `json:\"b\"`\n}\ntype Foo struct {\n\tA *string  `json:\"a,omitempty\"`\n\tB *float64 `json:\"b,omitempty\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference lazy partial object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "o": {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "string"
+                  },
+                  "b": {
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            "definition": {
+              "partial": true,
+              "relativePath": "o"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type O struct {\n\tA string  `json:\"a\"`\n\tB float64 `json:\"b\"`\n}\ntype Foo struct {\n\tA *string  `json:\"a,omitempty\"`\n\tB *float64 `json:\"b,omitempty\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference lazy partial non-object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "s": {
+                "type": "string"
+              }
+            },
+            "definition": {
+              "partial": true,
+              "relativePath": "s"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type S string\ntype Foo S"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference eager partial non-object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "s": {
+                "type": "string"
+              }
+            },
+            "definition": {
+              "partial": true,
+              "relativePath": "s",
+              "eager": true
+            }
+          },
+          null
+        ],
+        "expectedValue": "type S string\ntype Foo string"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object extend schemaReference partial",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ext",
+          {
+            "type": "object",
+            "extend": {
+              "type": "schemaReference",
+              "definition": {
+                "partial": true,
+                "relativePath": "Base"
+              }
+            },
+            "definition": {
+              "b": {
+                "type": "number"
+              }
+            }
+          },
+          {
+            "Base": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "expectedValue": "type Ext struct {\n\tA *string `json:\"a,omitempty\"`\n\tB float64 `json:\"b\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference lazy partial field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "object",
+            "definition": {
+              "nested": {
+                "type": "schemaReference",
+                "definition": {
+                  "partial": true,
+                  "relativePath": "o"
+                }
+              }
+            }
+          },
+          {
+            "o": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "expectedValue": "type Foo struct {\n\tNested struct {\n\t\tA *string `json:\"a,omitempty\"`\n\t} `json:\"nested\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference lazy partial optional field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "object",
+            "definition": {
+              "nested": {
+                "type": "schemaReference",
+                "optional": true,
+                "definition": {
+                  "partial": true,
+                  "relativePath": "o"
+                }
+              }
+            }
+          },
+          {
+            "o": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "expectedValue": "type Foo struct {\n\tNested *struct {\n\t\tA *string `json:\"a,omitempty\"`\n\t} `json:\"nested,omitempty\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference lazy partial self field",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "Node": {
+                "type": "object",
+                "definition": {
+                  "extra": {
+                    "type": "schemaReference",
+                    "definition": {
+                      "partial": true,
+                      "relativePath": "Node"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "Node"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Node struct {\n\tExtra *Node `json:\"extra\"`\n}\ntype Foo Node"
       }
     ]
   }

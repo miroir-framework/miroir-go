@@ -15,11 +15,12 @@ type namedDecl struct {
 }
 
 type generator struct {
-	env      map[string]any
-	names    map[string]any
-	emitted  []namedDecl
-	didEmit  map[string]bool
-	emitting map[string]bool
+	env             map[string]any
+	names           map[string]any
+	emitted         []namedDecl
+	didEmit         map[string]bool
+	emitting        map[string]bool
+	inliningPartial map[string]bool
 }
 
 // JzodToGoType emits a Go defined type with the given name for a Jzod schema.
@@ -61,10 +62,11 @@ func newGenerator(env map[string]any) *generator {
 		}
 	}
 	return &generator{
-		env:      env,
-		names:    names,
-		didEmit:  map[string]bool{},
-		emitting: map[string]bool{},
+		env:             env,
+		names:           names,
+		didEmit:         map[string]bool{},
+		emitting:        map[string]bool{},
+		inliningPartial: map[string]bool{},
 	}
 }
 
@@ -202,12 +204,13 @@ func (g *generator) schemaRefExpr(el map[string]any, inField bool) (string, erro
 	rel, _ := def["relativePath"].(string)
 	abs, _ := def["absolutePath"].(string)
 	eager, _ := def["eager"].(bool)
+	partial, _ := def["partial"].(bool)
 	if eager {
 		target, err := g.resolve(abs, rel)
 		if err != nil {
 			return "", err
 		}
-		return g.goTypeExprAt(target, inField)
+		return g.goTypeExprAt(applyPartialIfObject(target, partial), inField)
 	}
 	if rel == "" {
 		return "", fmt.Errorf("JzodToGoType schemaReference missing relativePath")
@@ -215,6 +218,17 @@ func (g *generator) schemaRefExpr(el map[string]any, inField bool) (string, erro
 	if abs != "" {
 		if _, ok := g.env[abs]; !ok {
 			return "", fmt.Errorf("JzodToGoType absolutePath %s not registered", abs)
+		}
+	}
+	if partial {
+		if target, err := g.resolve(abs, rel); err == nil && isObjectType(target) {
+			name := exportedIdent(rel)
+			if !g.emitting[name] && !g.inliningPartial[name] {
+				g.inliningPartial[name] = true
+				expr, err := g.goTypeExprAt(applyPartialIfObject(target, true), inField)
+				g.inliningPartial[name] = false
+				return expr, err
+			}
 		}
 	}
 	return g.lazyRefExpr(rel, inField), nil
@@ -252,6 +266,22 @@ func (g *generator) lazyRefExpr(rel string, inField bool) string {
 func isObjectType(v any) bool {
 	m, ok := v.(map[string]any)
 	return ok && m["type"] == "object"
+}
+
+func applyPartialIfObject(target any, partial bool) any {
+	if !partial {
+		return target
+	}
+	tm, ok := target.(map[string]any)
+	if !ok || tm["type"] != "object" {
+		return target
+	}
+	out := map[string]any{}
+	for k, v := range tm {
+		out[k] = v
+	}
+	out["partial"] = true
+	return out
 }
 
 func (g *generator) resolve(abs, rel string) (any, error) {
@@ -341,7 +371,14 @@ func (g *generator) extendDefinition(extend any) (map[string]any, error) {
 			if tm["type"] != "object" {
 				return nil, fmt.Errorf("JzodToGoType extend schemaReference resolved to non-object")
 			}
-			return g.objectDefinition(tm)
+			parent, err := g.objectDefinition(tm)
+			if err != nil {
+				return nil, err
+			}
+			if p, _ := def["partial"].(bool); p {
+				return markFieldsOptional(parent), nil
+			}
+			return parent, nil
 		default:
 			return nil, fmt.Errorf("JzodToGoType extend clause type %v", e["type"])
 		}
@@ -431,6 +468,30 @@ func mergeObjectDefs(parent, child map[string]any) map[string]any {
 		if !seen[k] {
 			keys = append(keys, k)
 		}
+	}
+	jzod.RememberKeys(out, keys)
+	return out
+}
+
+func markFieldsOptional(def map[string]any) map[string]any {
+	if def == nil {
+		return map[string]any{}
+	}
+	keys := jzod.KeysOf(def)
+	out := map[string]any{}
+	for _, k := range keys {
+		field := def[k]
+		fm, ok := field.(map[string]any)
+		if !ok {
+			out[k] = field
+			continue
+		}
+		clone := map[string]any{}
+		for ck, cv := range fm {
+			clone[ck] = cv
+		}
+		clone["optional"] = true
+		out[k] = clone
 	}
 	jzod.RememberKeys(out, keys)
 	return out
