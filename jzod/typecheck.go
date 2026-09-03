@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/miroir-framework/miroir/go/jzod/generated"
 )
 
 // ModelEnvironment holds absolute-reference MlSchemas for schemaReference lookup.
@@ -32,6 +34,7 @@ type Result struct {
 
 // TypeCheck checks value against a Jzod schema. Semantics follow miroir-core
 // jzodTypeCheck (packages/miroir-core/src/1_core/jzod/jzodTypeCheck.ts).
+// schema may be JSON-decoded map[string]any or a generated.JzodElement.
 func TypeCheck(
 	schema any,
 	value any,
@@ -52,125 +55,156 @@ func typeCheck(
 	relativeContext map[string]any,
 	schemaReferenceName string,
 ) Result {
-	schemaMap, ok := schema.(map[string]any)
-	if !ok {
-		return errorResult("jzodTypeCheck expected a schema object", "", valuePath, typePath, value, schema)
+	el, err := AsElement(schema)
+	if err != nil {
+		return asElementError(schema, err, valuePath, typePath, value)
 	}
-	schemaKind, _ := schemaMap["type"].(string)
+	el = unwrapElement(el)
+	kind := ElementKind(el)
 
 	if value == nil {
-		optional, _ := schemaMap["optional"].(bool)
-		nullable, _ := schemaMap["nullable"].(bool)
-		if !optional && !nullable && schemaKind != "any" && schemaKind != "undefined" {
-			return errorResult("jzodTypeCheck expected a value but got null for non-optional schema", schemaKind, valuePath, typePath, value, schema)
+		if !ElementOptional(el) && !ElementNullable(el) && kind != "any" && kind != "undefined" {
+			return errorResult("jzodTypeCheck expected a value but got null for non-optional schema", kind, valuePath, typePath, value, schema)
 		}
 		resolved := schema
-		if schemaKind == "any" {
+		if kind == "any" {
 			resolved = valueToJzod(value)
 		}
 		return okResult(schema, resolved, valuePath, typePath, schemaReferenceName)
 	}
 
-	switch schemaKind {
-	case "literal":
-		if valuesEqual(value, schemaMap["definition"]) {
+	switch e := el.(type) {
+	case generated.JzodLiteral:
+		if valuesEqual(value, e.Definition) {
 			return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
 		}
-		return mismatch(schemaKind, valuePath, typePath, value, schema)
+		return mismatch("literal", valuePath, typePath, value, schema)
+	case generated.JzodPlainAttribute:
+		return typeCheckPlain(e, schema, value, valuePath, typePath, schemaReferenceName)
+	case generated.JzodAttributePlainStringWithValidations:
+		if _, ok := value.(string); !ok {
+			return mismatch("string", valuePath, typePath, value, schema)
+		}
+		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
+	case generated.JzodAttributePlainNumberWithValidations:
+		if !isJSONNumber(value) {
+			return mismatch("number", valuePath, typePath, value, schema)
+		}
+		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
+	case generated.JzodAttributePlainDateWithValidations:
+		return typeCheckDate(schema, value, valuePath, typePath, schemaReferenceName)
+	case generated.JzodReference:
+		return typeCheckSchemaReference(e, schema, value, valuePath, typePath, env, relativeContext)
+	case generated.JzodObject:
+		return typeCheckObject(e, schema, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
+	case generated.JzodUnion:
+		return typeCheckUnion(e, schema, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
+	case generated.JzodEnum:
+		if enumContains(e.Definition, value) {
+			return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
+		}
+		return mismatch("enum", valuePath, typePath, value, schema)
+	case generated.JzodArray:
+		return typeCheckArray(e, schema, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
+	case generated.JzodTuple:
+		return typeCheckTuple(e, schema, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
+	case generated.JzodRecord:
+		return typeCheckRecord(e, schema, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
+	case generated.JzodIntersection, generated.JzodPromise, generated.JzodSet, generated.JzodFunction, generated.JzodMap, generated.JzodLazy:
+		return stubAccept(schema, valuePath, typePath, schemaReferenceName)
+	default:
+		return errorResult("jzodTypeCheck unsupported type "+kind, kind, valuePath, typePath, value, schema)
+	}
+}
+
+func typeCheckPlain(
+	e generated.JzodPlainAttribute,
+	schema, value any,
+	valuePath, typePath []any,
+	schemaReferenceName string,
+) Result {
+	switch e.Type {
 	case "string":
 		if _, ok := value.(string); !ok {
-			return mismatch(schemaKind, valuePath, typePath, value, schema)
+			return mismatch("string", valuePath, typePath, value, schema)
 		}
 		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
 	case "boolean":
 		if _, ok := value.(bool); !ok {
-			return mismatch(schemaKind, valuePath, typePath, value, schema)
+			return mismatch("boolean", valuePath, typePath, value, schema)
 		}
 		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
 	case "number":
 		if !isJSONNumber(value) {
-			return mismatch(schemaKind, valuePath, typePath, value, schema)
+			return mismatch("number", valuePath, typePath, value, schema)
 		}
 		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
-	case "schemaReference":
-		return typeCheckSchemaReference(schemaMap, value, valuePath, typePath, env, relativeContext)
-	case "object":
-		return typeCheckObject(schemaMap, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
-	case "union":
-		return typeCheckUnion(schemaMap, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
 	case "any":
 		return typeCheckAny(schema, value, valuePath, typePath, schemaReferenceName)
-	case "enum":
-		if enumContains(schemaMap["definition"], value) {
-			return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
-		}
-		return mismatch(schemaKind, valuePath, typePath, value, schema)
-	case "array":
-		return typeCheckArray(schemaMap, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
-	case "tuple":
-		return typeCheckTuple(schemaMap, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
-	case "record":
-		return typeCheckRecord(schemaMap, value, valuePath, typePath, env, relativeContext, schemaReferenceName)
 	case "uuid":
 		s, ok := value.(string)
 		if !ok || !uuidV4Pattern.MatchString(s) {
-			return mismatch(schemaKind, valuePath, typePath, value, schema)
+			return mismatch("uuid", valuePath, typePath, value, schema)
 		}
 		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
 	case "bigint":
-		return mismatch(schemaKind, valuePath, typePath, value, schema)
+		return mismatch("bigint", valuePath, typePath, value, schema)
 	case "date":
-		return typeCheckDate(schemaMap, value, valuePath, typePath, schemaReferenceName)
-	case "undefined", "never", "unknown", "void", "intersection", "promise", "set", "function", "map", "lazy":
-		return Result{
-			Status:              "ok",
-			SchemaReferenceName: schemaReferenceName,
-			ValuePath:           valuePath,
-			TypePath:            []any{},
-			RawSchema:           schema,
-			ResolvedSchema:      schema,
-			KeyMap: map[string]any{
-				joinPath(valuePath): map[string]any{
-					"rawSchema":      schema,
-					"resolvedSchema": schema,
-					"valuePath":      valuePath,
-					"typePath":       typePath,
-				},
-			},
-		}
+		return typeCheckDate(schema, value, valuePath, typePath, schemaReferenceName)
+	case "undefined", "never", "unknown", "void":
+		return stubAccept(schema, valuePath, typePath, schemaReferenceName)
 	default:
-		return errorResult("jzodTypeCheck unsupported type "+schemaKind, schemaKind, valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck unsupported type "+e.Type, e.Type, valuePath, typePath, value, schema)
+	}
+}
+
+func stubAccept(schema any, valuePath, typePath []any, schemaReferenceName string) Result {
+	return Result{
+		Status:              "ok",
+		SchemaReferenceName: schemaReferenceName,
+		ValuePath:           valuePath,
+		TypePath:            []any{},
+		RawSchema:           schema,
+		ResolvedSchema:      schema,
+		KeyMap: map[string]any{
+			joinPath(valuePath): map[string]any{
+				"rawSchema":      schema,
+				"resolvedSchema": schema,
+				"valuePath":      valuePath,
+				"typePath":       typePath,
+			},
+		},
 	}
 }
 
 func typeCheckSchemaReference(
-	schema map[string]any,
+	ref generated.JzodReference,
+	raw any,
 	value any,
 	valuePath, typePath []any,
 	env ModelEnvironment,
 	relativeContext map[string]any,
 ) Result {
-	newContext := mergeContext(relativeContext, contextOf(schema))
-	resolved, err := recursiveResolve(schema, newContext, env)
+	newContext := mergeContext(relativeContext, contextFromRef(ref))
+	resolved, err := resolveElement(ref, newContext, env)
 	if err != nil {
-		return errorResult("jzodTypeCheck failed to resolve schemaReference", "schemaReference", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed to resolve schemaReference", "schemaReference", valuePath, typePath, value, raw)
 	}
-	def := refDefinition(schema)
-	rel, _ := def["relativePath"].(string)
+	rel := ref.Definition.RelativePath
 	if rel == "" {
 		rel = "NO_RELATIVE_PATH"
 	}
 	inner := typeCheck(resolved, value, valuePath, appendPath(typePath, "ref:"+rel), env, newContext, rel)
 	if inner.Status == "error" {
-		return errorResult("jzodTypeCheck failed to resolve schemaReference", "schemaReference", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed to resolve schemaReference", "schemaReference", valuePath, typePath, value, raw)
 	}
 	inner.SchemaReferenceName = rel
-	inner.RawSchema = schema
+	inner.RawSchema = raw
 	if inner.KeyMap == nil {
 		inner.KeyMap = map[string]any{}
 	}
 	inner.KeyMap[joinPath(valuePath)] = map[string]any{
-		"rawSchema":                        schema,
+		"rawSchema":                        raw,
 		"resolvedReferenceSchemaInContext": resolved,
 		"resolvedSchema":                   inner.ResolvedSchema,
 		"valuePath":                        valuePath,
@@ -179,8 +213,45 @@ func typeCheckSchemaReference(
 	return inner
 }
 
+func resolveElement(ref generated.JzodReference, relativeContext map[string]any, env ModelEnvironment) (generated.JzodElement, error) {
+	target, err := lookupRef(ref, relativeContext, env)
+	if err != nil {
+		return nil, err
+	}
+	el, err := AsElement(target)
+	if err != nil {
+		return nil, err
+	}
+	el = unwrapElement(el)
+	if next, ok := el.(generated.JzodReference); ok {
+		return resolveElement(next, mergeContext(relativeContext, contextFromRef(next)), env)
+	}
+	return el, nil
+}
+
+func lookupRef(ref generated.JzodReference, relativeContext map[string]any, env ModelEnvironment) (any, error) {
+	lookup := relativeContext
+	if ref.Definition.AbsolutePath != nil && *ref.Definition.AbsolutePath != "" {
+		found := false
+		lookup, found = env.contextForUUID(*ref.Definition.AbsolutePath)
+		if !found {
+			return nil, fmt.Errorf("absolutePath %s not registered", *ref.Definition.AbsolutePath)
+		}
+	}
+	rel := ref.Definition.RelativePath
+	if rel == "" {
+		return nil, fmt.Errorf("schemaReference missing relativePath")
+	}
+	target, ok := lookup[rel]
+	if !ok {
+		return nil, fmt.Errorf("unresolved relativePath %s", rel)
+	}
+	return target, nil
+}
+
 func typeCheckObject(
-	schema map[string]any,
+	objSchema generated.JzodObject,
+	raw any,
 	value any,
 	valuePath, typePath []any,
 	env ModelEnvironment,
@@ -189,17 +260,32 @@ func typeCheckObject(
 ) Result {
 	obj, ok := value.(map[string]any)
 	if !ok {
-		return errorResult("jzodTypeCheck failed for object schema to match non-object value", "object", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed for object schema to match non-object value", "object", valuePath, typePath, value, raw)
 	}
-	flattened, err := flattenObject(schema, relativeContext, env)
+	schemaMap, err := schemaMapForObject(raw, objSchema)
 	if err != nil {
-		return errorResult("jzodTypeCheck failed to flatten object extend: "+err.Error(), "object", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed to flatten object extend: "+err.Error(), "object", valuePath, typePath, value, raw)
 	}
-	definition, _ := flattened["definition"].(map[string]any)
+	flattened, err := flattenObject(schemaMap, relativeContext, env)
+	if err != nil {
+		return errorResult("jzodTypeCheck failed to flatten object extend: "+err.Error(), "object", valuePath, typePath, value, raw)
+	}
+	flatEl, err := AsElement(flattened)
+	if err != nil {
+		return errorResult("jzodTypeCheck failed to flatten object extend: "+err.Error(), "object", valuePath, typePath, value, raw)
+	}
+	flatObj, ok := unwrapElement(flatEl).(generated.JzodObject)
+	if !ok {
+		return errorResult("jzodTypeCheck failed to flatten object extend: flattened schema is not an object", "object", valuePath, typePath, value, raw)
+	}
+	definition := flatObj.Definition
 	if definition == nil {
-		definition = map[string]any{}
+		definition = map[string]generated.JzodElement{}
 	}
-	nonStrict, _ := schema["nonStrict"].(bool)
+	nonStrict := false
+	if flatObj.NonStrict != nil {
+		nonStrict = *flatObj.NonStrict
+	}
 	resolvedDef := map[string]any{}
 	for key, attrValue := range obj {
 		attrSchema, found := definition[key]
@@ -208,11 +294,11 @@ func typeCheckObject(
 				resolvedDef[key] = map[string]any{"type": "any"}
 				continue
 			}
-			return errorResult("jzodTypeCheck failed to match some object value attribute(s) with the schema of that attribute(s)", "object", valuePath, typePath, value, schema)
+			return errorResult("jzodTypeCheck failed to match some object value attribute(s) with the schema of that attribute(s)", "object", valuePath, typePath, value, raw)
 		}
 		attrResult := typeCheck(attrSchema, attrValue, appendPath(valuePath, key), appendPath(typePath, key), env, relativeContext, "")
 		if attrResult.Status == "error" {
-			return errorResult("jzodTypeCheck failed to match some object value attribute(s) with the schema of that attribute(s)", "object", valuePath, typePath, value, schema)
+			return errorResult("jzodTypeCheck failed to match some object value attribute(s) with the schema of that attribute(s)", "object", valuePath, typePath, value, raw)
 		}
 		resolvedDef[key] = attrResult.ResolvedSchema
 	}
@@ -220,23 +306,30 @@ func typeCheckObject(
 		if _, present := obj[key]; present {
 			continue
 		}
-		attrMap, _ := attrSchema.(map[string]any)
-		if isOptionalOrNullable(attrMap) {
+		if ElementOptional(attrSchema) || ElementNullable(attrSchema) {
 			continue
 		}
-		return errorResult("jzodTypeCheck failed to match some mandatory object value attribute(s) with the schema of that attribute(s)", "object", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed to match some mandatory object value attribute(s) with the schema of that attribute(s)", "object", valuePath, typePath, value, raw)
 	}
 	resolvedSchema := map[string]any{
 		"type":       "object",
 		"definition": resolvedDef,
 	}
-	return okResult(schema, resolvedSchema, valuePath, typePath, schemaReferenceName)
+	return okResult(raw, resolvedSchema, valuePath, typePath, schemaReferenceName)
+}
+
+func schemaMapForObject(raw any, obj generated.JzodObject) (map[string]any, error) {
+	if m, ok := raw.(map[string]any); ok {
+		return m, nil
+	}
+	return ElementToMap(obj)
 }
 
 var uuidV4Pattern = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 
 func typeCheckArray(
-	schema map[string]any,
+	arr generated.JzodArray,
+	raw any,
 	value any,
 	valuePath, typePath []any,
 	env ModelEnvironment,
@@ -245,22 +338,22 @@ func typeCheckArray(
 ) Result {
 	list, ok := value.([]any)
 	if !ok {
-		return mismatch("array", valuePath, typePath, value, schema)
+		return mismatch("array", valuePath, typePath, value, raw)
 	}
-	elemSchema := schema["definition"]
 	items := make([]any, len(list))
 	for i, item := range list {
-		r := typeCheck(elemSchema, item, appendPath(valuePath, i), appendPath(typePath, i), env, relativeContext, "")
+		r := typeCheck(arr.Definition, item, appendPath(valuePath, i), appendPath(typePath, i), env, relativeContext, "")
 		if r.Status == "error" {
-			return errorResult("jzodTypeCheck failed to match value with array schema", "array", valuePath, typePath, value, schema)
+			return errorResult("jzodTypeCheck failed to match value with array schema", "array", valuePath, typePath, value, raw)
 		}
 		items[i] = r.ResolvedSchema
 	}
-	return okResult(schema, map[string]any{"type": "tuple", "definition": items}, valuePath, typePath, schemaReferenceName)
+	return okResult(raw, map[string]any{"type": "tuple", "definition": items}, valuePath, typePath, schemaReferenceName)
 }
 
 func typeCheckTuple(
-	schema map[string]any,
+	tup generated.JzodTuple,
+	raw any,
 	value any,
 	valuePath, typePath []any,
 	env ModelEnvironment,
@@ -269,21 +362,49 @@ func typeCheckTuple(
 ) Result {
 	list, ok := value.([]any)
 	if !ok {
-		return mismatch("tuple", valuePath, typePath, value, schema)
+		return mismatch("tuple", valuePath, typePath, value, raw)
 	}
-	defs, _ := schema["definition"].([]any)
+	defs := tup.Definition
 	if len(list) != len(defs) {
-		return mismatch("tuple", valuePath, typePath, value, schema)
+		return mismatch("tuple", valuePath, typePath, value, raw)
 	}
 	items := make([]any, len(list))
 	for i, item := range list {
 		r := typeCheck(defs[i], item, appendPath(valuePath, i), appendPath(typePath, i), env, relativeContext, "")
 		if r.Status == "error" {
-			return errorResult("jzodTypeCheck failed to match value with tuple schema", "tuple", valuePath, typePath, value, schema)
+			return errorResult("jzodTypeCheck failed to match value with tuple schema", "tuple", valuePath, typePath, value, raw)
 		}
 		items[i] = r.ResolvedSchema
 	}
-	return okResult(schema, map[string]any{"type": "tuple", "definition": items}, valuePath, typePath, schemaReferenceName)
+	return okResult(raw, map[string]any{"type": "tuple", "definition": items}, valuePath, typePath, schemaReferenceName)
+}
+
+func typeCheckRecord(
+	rec generated.JzodRecord,
+	raw any,
+	value any,
+	valuePath, typePath []any,
+	env ModelEnvironment,
+	relativeContext map[string]any,
+	schemaReferenceName string,
+) Result {
+	obj, ok := value.(map[string]any)
+	if !ok {
+		return errorResult("jzodTypeCheck record schema for value is not an object", "record", valuePath, typePath, value, raw)
+	}
+	elemSchema := rec.Definition
+	if _, isUnion := unwrapElement(elemSchema).(generated.JzodUnion); isUnion {
+		elemSchema = generated.JzodPlainAttribute{Type: "any"}
+	}
+	resolvedDef := map[string]any{}
+	for key, attrValue := range obj {
+		attrResult := typeCheck(elemSchema, attrValue, appendPath(valuePath, key), appendPath(typePath, key), env, relativeContext, "")
+		if attrResult.Status == "error" {
+			return errorResult("jzodTypeCheck failed to match value with record schema", "record", valuePath, typePath, value, raw)
+		}
+		resolvedDef[key] = attrResult.ResolvedSchema
+	}
+	return okResult(raw, map[string]any{"type": "object", "definition": resolvedDef}, valuePath, typePath, schemaReferenceName)
 }
 
 func flattenObject(schema map[string]any, relativeContext map[string]any, env ModelEnvironment) (map[string]any, error) {
@@ -326,7 +447,7 @@ func extendProperties(extend any, relativeContext map[string]any, env ModelEnvir
 			if err != nil {
 				return nil, err
 			}
-			resolvedMap, ok := resolved.(map[string]any)
+			resolvedMap, ok := asSchemaMap(resolved)
 			if !ok {
 				return nil, fmt.Errorf("extend schemaReference resolved to non-object")
 			}
@@ -352,34 +473,7 @@ func extendProperties(extend any, relativeContext map[string]any, env ModelEnvir
 	}
 }
 
-func typeCheckRecord(
-	schema map[string]any,
-	value any,
-	valuePath, typePath []any,
-	env ModelEnvironment,
-	relativeContext map[string]any,
-	schemaReferenceName string,
-) Result {
-	obj, ok := value.(map[string]any)
-	if !ok {
-		return errorResult("jzodTypeCheck record schema for value is not an object", "record", valuePath, typePath, value, schema)
-	}
-	elemSchema := schema["definition"]
-	if m, ok := elemSchema.(map[string]any); ok && m["type"] == "union" {
-		elemSchema = map[string]any{"type": "any"}
-	}
-	resolvedDef := map[string]any{}
-	for key, attrValue := range obj {
-		attrResult := typeCheck(elemSchema, attrValue, appendPath(valuePath, key), appendPath(typePath, key), env, relativeContext, "")
-		if attrResult.Status == "error" {
-			return errorResult("jzodTypeCheck failed to match value with record schema", "record", valuePath, typePath, value, schema)
-		}
-		resolvedDef[key] = attrResult.ResolvedSchema
-	}
-	return okResult(schema, map[string]any{"type": "object", "definition": resolvedDef}, valuePath, typePath, schemaReferenceName)
-}
-
-func typeCheckDate(schema map[string]any, value any, valuePath, typePath []any, schemaReferenceName string) Result {
+func typeCheckDate(schema any, value any, valuePath, typePath []any, schemaReferenceName string) Result {
 	if isJSDate(value) {
 		return okResult(schema, schema, valuePath, typePath, schemaReferenceName)
 	}
@@ -526,73 +620,71 @@ func buildAnySubnodeKeyMap(obj map[string]any, basePath, baseTypePath []any) map
 }
 
 func typeCheckUnion(
-	schema map[string]any,
+	union generated.JzodUnion,
+	raw any,
 	value any,
 	valuePath, typePath []any,
 	env ModelEnvironment,
 	relativeContext map[string]any,
 	schemaReferenceName string,
 ) Result {
-	unfolded, err := unfoldUnion(schema, map[string]bool{}, relativeContext, env)
+	unfolded, err := unfoldUnion(union, map[string]bool{}, relativeContext, env)
 	if err != nil {
-		return errorResult("jzodTypeCheck failed to recursively unfold schema", "union", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed to recursively unfold schema", "union", valuePath, typePath, value, raw)
 	}
 	if obj, isObj := value.(map[string]any); isObj {
 		for _, b := range unfolded {
-			branch, ok := b.(map[string]any)
-			if !ok || branch["type"] != "object" {
+			if ElementKind(unwrapElement(b)) != "object" {
 				continue
 			}
-			inner := typeCheck(branch, obj, valuePath, typePath, env, relativeContext, "")
+			inner := typeCheck(b, obj, valuePath, typePath, env, relativeContext, "")
 			if inner.Status == "ok" {
-				inner.RawSchema = schema
+				inner.RawSchema = raw
 				inner.SchemaReferenceName = schemaReferenceName
 				return inner
 			}
 		}
-		return errorResult("jzodTypeCheck failed to resolve union for object", "union", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck failed to resolve union for object", "union", valuePath, typePath, value, raw)
 	}
 	chosen, ok := pickUnionBranch(unfolded, value)
 	if !ok {
-		return errorResult("jzodTypeCheck could not find type for value in resolved union", "union", valuePath, typePath, value, schema)
+		return errorResult("jzodTypeCheck could not find type for value in resolved union", "union", valuePath, typePath, value, raw)
 	}
-	return okResult(schema, chosen, valuePath, typePath, schemaReferenceName)
+	return okResult(raw, chosen, valuePath, typePath, schemaReferenceName)
 }
 
-func pickUnionBranch(branches []any, value any) (any, bool) {
+func pickUnionBranch(branches []generated.JzodElement, value any) (any, bool) {
 	switch value.(type) {
 	case string:
 		for _, b := range branches {
-			m, ok := b.(map[string]any)
-			if !ok {
-				continue
-			}
-			switch m["type"] {
+			el := unwrapElement(b)
+			switch ElementKind(el) {
 			case "any", "string", "uuid":
-				return m, true
+				return el, true
 			case "literal":
-				if valuesEqual(value, m["definition"]) {
-					return m, true
+				if lit, ok := el.(generated.JzodLiteral); ok && valuesEqual(value, lit.Definition) {
+					return el, true
 				}
 			case "enum":
-				if enumContains(m["definition"], value) {
-					return m, true
+				if en, ok := el.(generated.JzodEnum); ok && enumContains(en.Definition, value) {
+					return el, true
 				}
 			}
 		}
 	case bool:
 		for _, b := range branches {
-			m, ok := b.(map[string]any)
-			if ok && m["type"] == "boolean" {
-				return m, true
+			el := unwrapElement(b)
+			if ElementKind(el) == "boolean" {
+				return el, true
 			}
 		}
 	default:
 		if isJSONNumber(value) {
 			for _, b := range branches {
-				m, ok := b.(map[string]any)
-				if ok && (m["type"] == "number" || m["type"] == "bigint") {
-					return m, true
+				el := unwrapElement(b)
+				kind := ElementKind(el)
+				if kind == "number" || kind == "bigint" {
+					return el, true
 				}
 			}
 		}
@@ -600,44 +692,36 @@ func pickUnionBranch(branches []any, value any) (any, bool) {
 	return nil, false
 }
 
-func unfoldUnion(union map[string]any, expanded map[string]bool, relativeContext map[string]any, env ModelEnvironment) ([]any, error) {
-	def, _ := union["definition"].([]any)
-	var result []any
-	var refs []map[string]any
-	var nested []map[string]any
-	for _, raw := range def {
-		branch, ok := raw.(map[string]any)
-		if !ok {
-			continue
-		}
-		switch branch["type"] {
-		case "schemaReference":
-			refs = append(refs, branch)
-		case "union":
-			nested = append(nested, branch)
+func unfoldUnion(union generated.JzodUnion, expanded map[string]bool, relativeContext map[string]any, env ModelEnvironment) ([]generated.JzodElement, error) {
+	var result []generated.JzodElement
+	var refs []generated.JzodReference
+	var nested []generated.JzodUnion
+	for _, raw := range union.Definition {
+		switch b := unwrapElement(raw).(type) {
+		case generated.JzodReference:
+			refs = append(refs, b)
+		case generated.JzodUnion:
+			nested = append(nested, b)
 		default:
-			result = append(result, branch)
+			result = append(result, unwrapElement(raw))
 		}
 	}
 	newExpanded := copyExpanded(expanded)
 	for _, ref := range refs {
-		rel, _ := refDefinition(ref)["relativePath"].(string)
+		rel := ref.Definition.RelativePath
 		if rel != "" && newExpanded[rel] {
 			continue
 		}
 		if rel != "" {
 			newExpanded[rel] = true
 		}
-		resolved, err := recursiveResolve(ref, mergeContext(relativeContext, contextOf(ref)), env)
+		resolved, err := resolveElement(ref, mergeContext(relativeContext, contextFromRef(ref)), env)
 		if err != nil {
 			return nil, err
 		}
-		resolvedMap, ok := resolved.(map[string]any)
-		if !ok {
-			continue
-		}
-		if resolvedMap["type"] == "union" {
-			nested = append(nested, resolvedMap)
+		resolved = unwrapElement(resolved)
+		if u, ok := resolved.(generated.JzodUnion); ok {
+			nested = append(nested, u)
 			continue
 		}
 		result = append(result, resolved)
@@ -657,10 +741,21 @@ func recursiveResolve(schema map[string]any, relativeContext map[string]any, env
 	if err != nil {
 		return nil, err
 	}
-	if next, ok := resolved.(map[string]any); ok && next["type"] == "schemaReference" {
-		return recursiveResolve(next, mergeContext(relativeContext, contextOf(next)), env)
+	if m, ok := asSchemaMap(resolved); ok && m["type"] == "schemaReference" {
+		return recursiveResolve(m, mergeContext(relativeContext, contextOf(m)), env)
 	}
 	return resolved, nil
+}
+
+func asSchemaMap(v any) (map[string]any, bool) {
+	if m, ok := v.(map[string]any); ok {
+		return m, true
+	}
+	if el, ok := v.(generated.JzodElement); ok {
+		m, err := ElementToMap(unwrapElement(el))
+		return m, err == nil
+	}
+	return nil, false
 }
 
 func resolveReference(schema map[string]any, relativeContext map[string]any, env ModelEnvironment) (any, error) {
@@ -784,15 +879,6 @@ func isJSONNumber(v any) bool {
 	}
 }
 
-func isOptionalOrNullable(schema map[string]any) bool {
-	if schema == nil {
-		return false
-	}
-	optional, _ := schema["optional"].(bool)
-	nullable, _ := schema["nullable"].(bool)
-	return optional || nullable
-}
-
 func contextOf(schema map[string]any) map[string]any {
 	c, _ := schema["context"].(map[string]any)
 	return c
@@ -821,13 +907,18 @@ func mergeContext(base, extra map[string]any) map[string]any {
 }
 
 func enumContains(definition any, value any) bool {
-	list, ok := definition.([]any)
-	if !ok {
-		return false
-	}
-	for _, item := range list {
-		if valuesEqual(item, value) {
-			return true
+	switch list := definition.(type) {
+	case []any:
+		for _, item := range list {
+			if valuesEqual(item, value) {
+				return true
+			}
+		}
+	case []string:
+		for _, item := range list {
+			if valuesEqual(item, value) {
+				return true
+			}
 		}
 	}
 	return false
