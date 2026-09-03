@@ -13,8 +13,8 @@ func TestJzodToGoType(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(outcomes) != 35 {
-		t.Fatalf("leaves: got %d want 35", len(outcomes))
+	if len(outcomes) != 48 {
+		t.Fatalf("leaves: got %d want 48", len(outcomes))
 	}
 	for _, o := range outcomes {
 		if !o.OK {

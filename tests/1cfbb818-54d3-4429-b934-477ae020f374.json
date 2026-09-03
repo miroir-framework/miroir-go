@@ -729,6 +729,455 @@
           null
         ],
         "expectedValue": "type Ext struct {\n\tA string `json:\"a\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference local context",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "a": {
+                "type": "string"
+              },
+              "b": {
+                "type": "object",
+                "definition": {
+                  "test": {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "a"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "b"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type A string\ntype B struct {\n\tTest A `json:\"test\"`\n}\ntype Foo B"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference recursive optional self",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Tree",
+          {
+            "type": "schemaReference",
+            "context": {
+              "Node": {
+                "type": "object",
+                "definition": {
+                  "next": {
+                    "type": "schemaReference",
+                    "optional": true,
+                    "definition": {
+                      "relativePath": "Node"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "Node"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Node struct {\n\tNext *Node `json:\"next,omitempty\"`\n}\ntype Tree Node"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference recursive required self",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Tree",
+          {
+            "type": "schemaReference",
+            "context": {
+              "Node": {
+                "type": "object",
+                "definition": {
+                  "next": {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "Node"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "Node"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Node struct {\n\tNext *Node `json:\"next\"`\n}\ntype Tree Node"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference recursive main name matches context",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Node",
+          {
+            "type": "schemaReference",
+            "context": {
+              "Node": {
+                "type": "object",
+                "definition": {
+                  "next": {
+                    "type": "schemaReference",
+                    "optional": true,
+                    "definition": {
+                      "relativePath": "Node"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "Node"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Node struct {\n\tNext *Node `json:\"next,omitempty\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference recursive children array",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Tree",
+          {
+            "type": "schemaReference",
+            "context": {
+              "Node": {
+                "type": "object",
+                "definition": {
+                  "children": {
+                    "type": "array",
+                    "definition": {
+                      "type": "schemaReference",
+                      "definition": {
+                        "relativePath": "Node"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "Node"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type Node struct {\n\tChildren []*Node `json:\"children\"`\n}\ntype Tree Node"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference recursive union",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Tree",
+          {
+            "type": "schemaReference",
+            "context": {
+              "myObject": {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "union",
+                    "definition": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "schemaReference",
+                        "definition": {
+                          "relativePath": "myObject"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "myObject"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type MyObject struct {\n\tA any `json:\"a\"`\n}\ntype Tree MyObject"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference mutual recursive objects",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "a": {
+                "type": "object",
+                "definition": {
+                  "b": {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "b"
+                    }
+                  }
+                }
+              },
+              "b": {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "a"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "a"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type A struct {\n\tB *B `json:\"b\"`\n}\ntype B struct {\n\tA *A `json:\"a\"`\n}\ntype Foo A"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference env relativePath only",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "definition": {
+              "relativePath": "a"
+            }
+          },
+          {
+            "a": {
+              "type": "string"
+            }
+          }
+        ],
+        "expectedValue": "type Foo A"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference eager local object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "o": {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "o",
+              "eager": true
+            }
+          },
+          null
+        ],
+        "expectedValue": "type O struct {\n\tA string `json:\"a\"`\n}\ntype Foo struct {\n\tA string `json:\"a\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference absolutePath uuid",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "definition": {
+              "absolutePath": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "relativePath": "a"
+            }
+          },
+          {
+            "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee": {
+              "uuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "definition": {
+                "type": "schemaReference",
+                "context": {
+                  "a": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "expectedValue": "type Foo A"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "object extend schemaReference env",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Ext",
+          {
+            "type": "object",
+            "extend": {
+              "type": "schemaReference",
+              "definition": {
+                "relativePath": "Base"
+              }
+            },
+            "definition": {
+              "extra": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "Base": {
+              "type": "object",
+              "definition": {
+                "a": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "expectedValue": "type Ext struct {\n\tA     string `json:\"a\"`\n\tExtra bool   `json:\"extra\"`\n}"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference extend eager local object",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "a": {
+                "type": "object",
+                "definition": {
+                  "a": {
+                    "type": "string"
+                  }
+                }
+              },
+              "b": {
+                "type": "object",
+                "extend": {
+                  "type": "schemaReference",
+                  "definition": {
+                    "eager": true,
+                    "relativePath": "a"
+                  }
+                },
+                "definition": {
+                  "b": {
+                    "type": "schemaReference",
+                    "definition": {
+                      "relativePath": "a"
+                    }
+                  }
+                }
+              }
+            },
+            "definition": {
+              "relativePath": "b"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type A struct {\n\tA string `json:\"a\"`\n}\ntype B struct {\n\tA string `json:\"a\"`\n\tB *A     `json:\"b\"`\n}\ntype Foo B"
+      },
+      {
+        "miroirTestType": "functionCallTest",
+        "miroirTestLabel": "schemaReference lazy alias before target",
+        "functionRef": {
+          "module": "miroir-go/jzodgen",
+          "export": "JzodToGoType"
+        },
+        "arguments": [
+          "Foo",
+          {
+            "type": "schemaReference",
+            "context": {
+              "b": {
+                "type": "schemaReference",
+                "definition": {
+                  "relativePath": "a"
+                }
+              },
+              "a": {
+                "type": "string"
+              }
+            },
+            "definition": {
+              "relativePath": "b"
+            }
+          },
+          null
+        ],
+        "expectedValue": "type B A\ntype A string\ntype Foo B"
       }
     ]
   }
